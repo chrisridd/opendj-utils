@@ -1,0 +1,205 @@
+#!/usr/bin/perl -w
+# Find particular operations and display their etime distribution
+
+use strict;
+use warnings;
+
+$::VERSION = 0.1;
+
+sub version()
+{
+	print STDERR "$0 version $::VERSION\n";
+	exit 0;
+}
+
+sub usage()
+{
+	print STDERR "Usage: $0 [-s] [-e etime] [op]\n";
+	exit 1;
+}
+
+my %opt = (
+	's' => 0,                   # Summary mode
+	'e' => 1000,                # Etime
+	'h' => 0,                   # Help
+	'v' => 0,                   # Version
+);
+
+my $op = 'SEARCH';
+
+while (@ARGV) {
+	my $arg = shift @ARGV;
+	if ($arg =~ m{^-s$|^--summary$}) {
+		$opt{'s'} = 1;
+	} elsif ($arg =~ m{^-e$|^--etime$}) {
+		$opt{e} = shift @ARGV;
+		usage unless defined $opt{e};
+	} elsif ($arg =~ m{^-h$|^--help$}) {
+		$opt{h} = 1;
+	} elsif ($arg =~ m{^-v$|^--version$}) {
+		$opt{v} = 1;
+	} else {
+		$op = $arg;
+		last;
+	}
+}
+
+version if $opt{v};
+usage if $opt{h};
+
+my %details;
+my %quantize;
+my $scale = 0;
+
+# Calculating mean
+my $sum = 0;
+my $values = 0;
+# Calculating median
+my $lowest = undef;
+my $highest = undef;
+# Calculating mode
+my %mode;
+
+while (<>) {
+	chomp;
+	if (my ($tuple) = m{$op REQ.*(conn=-?\d+ op=\d+ msgID=\d+)}) {
+		$details{$tuple} = $_;
+		next;
+	}
+	if (my ($tuple,$etime) = m{$op RES.*(conn=-?\d+ op=\d+ msgID=\d+).*etime=(\d+)}) {
+		if (exists $details{$tuple}) {
+			my $details = $details{$tuple};
+			delete $details{$tuple};
+			if ($etime >= $opt{e}) {
+				print "$details etime=$etime\n";
+			}
+			if ($opt{'s'}) {
+				$sum += $etime;
+				$values++;
+				$lowest = $etime unless defined($lowest);
+				$highest = $etime unless defined($highest);
+				$lowest = $etime if $etime < $lowest;
+				$highest = $etime if $etime > $highest;
+				$mode{$etime} = 0 unless exists $mode{$etime};
+				$mode{$etime}++;
+
+				my $bucket = 1;
+				do {
+					if ($etime <= $bucket) {
+						$quantize{$bucket} = [] unless exists $quantize{$bucket};
+						push @{$quantize{$bucket}}, $details;
+						if (scalar(@{$quantize{$bucket}}) > $scale) {
+							$scale = scalar(@{$quantize{$bucket}});
+						}
+						next;
+					}
+					$bucket *= 2;
+				} while (1);
+			}
+		}
+	}
+}
+
+exit 0 unless $opt{'s'};
+format STDOUT_TOP =
+ value  ------------------------Distribution------------------------ count
+.
+format = 
+@>>>>> |@<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< @<<<<<<<<
+$::bucket, $::bar, $::count
+.
+foreach our $bucket (sort {$a <=> $b} (keys %quantize)) {
+	our $count = scalar(@{$quantize{$bucket}});
+	our $bar = "@" x ($count * 60.0 / $scale);
+	write;
+}
+
+if ($values > 0) {
+	my $key_max = undef;
+	my $val_max = 0;
+	foreach (keys %mode) {
+		if ($mode{$_} > $val_max) {
+			$val_max = $mode{$_};
+			$key_max = $_;
+		}
+	}
+	printf "Mean:   %.02f\n", $sum / $values;
+	printf "Median: %.02f\n", ($highest - $lowest) / 2;
+	printf "Mode:   %.02f\n", $key_max;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+slowops -  analyze operation performance in OpenDJ log files
+
+=head1 SYNOPSIS
+
+slowops -s op
+
+slowops -e min op
+
+slowops -h
+
+slowops -v
+
+=head1 DESCRIPTION
+
+OpenDJ access log files record the elapsed time ("etime") taken by each LDAP
+operation. However if the server is busy finding slow operations is awkward, and
+finding any trends in the data is difficult.
+
+This tool analyzes OpenDJ access logs in a couple of ways. The statistics mode
+shows a graph of operation performance, and some basic figures like
+mean/mode/median. The etime mode reports all operations that take longer than a
+certain time to complete.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-h> display help text.
+
+=item B<-v> report the tool version.
+
+=item B<-s> report statistics after reading all the data. The graph output is a
+power-of-two frequency distribution, modelled on dtrace(1)'s quantize function.
+
+=item B<-e> report operations which have etimes larger than C<I<min>>.
+
+=item B<op> the LDAP operation being analyzed, which should be one of C<BIND>,
+C<SEARCH>, C<ADD>, C<DELETE>, C<MODIFY>, C<MODIFYDN>.
+
+=back
+
+=head1 EXAMPLE
+
+$ slowops -s ADD < access
+
+ value  ------------------------Distribution------------------------ count
+     1 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@                         193
+     2 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 317
+     4 |                                                             3
+     8 |                                                             3
+    16 |                                                             1
+Mean:   1.68
+Median: 4.50
+Mode:   2.00
+
+=head1 SEE ALSO
+
+L<dtrace(1)>
+
+L<http://opendj.forgerock.org>
+
+=head1 AUTHOR
+
+Chris Ridd E<lt>chris.ridd@forgerock.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2012 Chris Ridd. All rights reserved. This tool is free software;
+you can redistribute it and/or modify it under the same terms as Perl itself.

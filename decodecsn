@@ -1,0 +1,79 @@
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+use bignum qw(hex);
+
+use POSIX qw(strftime);
+
+unless ($#ARGV >= 0) {
+	print STDERR "Usage: $0 csn [...]\n";
+	exit 1;
+}
+
+foreach (@ARGV) {
+	if (my($ts,$id,$no) = m{^(................)(....)(........)$}) {
+		my $ts_dec = hex($ts); # Value is 64-bits
+		my $id_dec = hex($id);
+		my $no_dec = hex($no);
+		my $ms = sprintf "%03d", $ts_dec % 1000;
+		my $ts_str = strftime "%a %b %e %Y %H:%M:%S.$ms", localtime($ts_dec/1000);
+		print "CSN $_\n  ts=$ts ($ts_dec) $ts_str\n  id=$id ($id_dec)\n  no=$no ($no_dec)\n";
+		next;
+	}
+	warn "Not a CSN: $_\n";
+}
+
+exit 0;
+
+__END__
+
+=head1 NAME
+
+decodecsn -  decode OpenDJ change sequence numbers
+
+=head1 SYNOPSIS
+
+decodecsn csn [...]
+
+=head1 DESCRIPTION
+
+OpenDJ uses change sequence numbers to record information about replicated
+changes. The CSN format is structured and can sometimes be usefully analyzed.
+
+This tool decodes CSNs.
+
+=head1 OPTIONS
+
+=over
+
+=item B<csn> a change sequence number encoded in hex.
+
+=back
+
+=head1 EXAMPLE
+
+$ decodecsn 0000013a8c81e8280b5a00000004
+
+CSN 0000013a8c81e8280b5a00000004
+  ts=0000013a8c81e828 (1350977054760) Tue Oct 23 2012 08:24:14.760
+  id=0b5a (2906)
+  no=00000004 (4)
+
+=head1 WARNING
+
+The format of the CSN is undocumented and subject to change. This tool has been
+tested with OpenDJ 2.4 and OpenDJ 2.5.
+
+=head1 SEE ALSO
+
+L<http://opendj.forgerock.org>
+
+=head1 AUTHOR
+
+Chris Ridd E<lt>chris.ridd@forgerock.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2012 Chris Ridd. All rights reserved. This tool is free software;
+you can redistribute it and/or modify it under the same terms as Perl itself.

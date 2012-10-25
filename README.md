@@ -1,4 +1,8 @@
 opendj-utils
 ============
 
-Small utilities for the OpenDJ LDAP server
+Some small utilities for the OpenDJ LDAP server.
+
+* slowops - analyzes operation times in access logs
+* decodecsn - decodes replication CSNs
+
