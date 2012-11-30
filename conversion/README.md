@@ -2,7 +2,7 @@ Convert from svn to git
 =======================
 
 Currently the OpenDJ repository is held in subversion. This is a set of scripts
-using the svn-all-fast-export tool from KDE that convert it (one-way) to a
+using the svn-all-fast-export tool from KDE that converts it (one-way) to a
 nice clean git repository.
 
 I originally discovered this tool [here](http://blog.smartbear.com/software-quality/bid/170525/Migrating-from-Subversion-to-Git-Lessons-Learned)
@@ -23,5 +23,6 @@ The main difficulty in the conversion is handled by running the tool in several
 steps. It does this because the committer names used by svn should be converted
 into "correct" email addresses for git, and over time the same committer names
 have worked for Sun, Oracle, and ForgeRock. I set up 3 `idmap.*` files to cover
-these three periods of time. I don't think the boundaries between all three
-periods is completely correct. Corrections are welcomed!
+these three periods of time. I know the boundaries between all three periods is
+not correct. Corrections are welcomed!
+
