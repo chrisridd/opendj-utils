@@ -1,0 +1,17 @@
+#!/bin/sh
+# Convert the opendj repository from subversion to git
+
+tool=svn-all-fast-export
+repo=opendj-svn
+
+rm -fr opendj
+
+# Ranges of commits need different identity-maps.
+# This shows one way to achieve this.
+
+# From start committers are from sun.com
+$tool --rules rules --max-rev 6616     --identity-map idmap.sun $repo
+# Around r???? committers are from oracle.com
+#$tool --rules rules --max-rev 6616     --identity-map idmap.oracle $repo
+# Around r6617 committers are from forgerock.com
+$tool --rules rules --resume-from 6617 --identity-map idmap.forgerock $repo

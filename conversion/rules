@@ -1,0 +1,25 @@
+create repository opendj
+end repository
+
+match /branches/README
+end match
+
+match /tags/README
+end match
+
+match /README
+end match
+
+match /trunk/
+  repository opendj
+  branch master
+end match
+
+match /branches/([^/]+)/
+  repository opendj
+  branch \1
+end match
+
+match /tags/([^/]+)/
+  action ignore
+end match
