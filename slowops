@@ -20,7 +20,7 @@ sub usage()
 
 my %opt = (
 	's' => 0,                   # Summary mode
-	'e' => 1000,                # Etime
+	'e' => -1,                  # Etime
 	'h' => 0,                   # Help
 	'v' => 0,                   # Version
 );
@@ -70,7 +70,7 @@ while (<>) {
 		if (exists $details{$tuple}) {
 			my $details = $details{$tuple};
 			delete $details{$tuple};
-			if ($etime >= $opt{e}) {
+			if ($opt{e} != -1 && $etime >= $opt{e}) {
 				print "$details etime=$etime\n";
 			}
 			if ($opt{'s'}) {
@@ -85,8 +85,8 @@ while (<>) {
 
 				my $bucket = 1;
 				do {
+					$quantize{$bucket} = [] unless exists $quantize{$bucket};
 					if ($etime <= $bucket) {
-						$quantize{$bucket} = [] unless exists $quantize{$bucket};
 						push @{$quantize{$bucket}}, $details;
 						if (scalar(@{$quantize{$bucket}}) > $scale) {
 							$scale = scalar(@{$quantize{$bucket}});
