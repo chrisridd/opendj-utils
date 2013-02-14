@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+	BBEdit codeless language module for LDIF files.
+	Chris Ridd <chris.ridd@forgerock.com>
+
+	Released under the Common Development and Distribution License (CDDL) 1.0
+	<http://opensource.org/licenses/cddl1.txt>
+
+	Requires BBEdit/TextWrangler 8.0 or higher. To install, copy here:
+	
+		~/Library/Application Support/BBEdit/Language Modules/
+	or:
+		~/Library/Application Support/TextWrangler/Language Modules/
+
+	and relaunch.
+-->
+<dict>
+	<key>BBEditDocumentType</key>
+	<string>CodelessLanguageModule</string>
+	<key>BBLMColorsSyntax</key>
+	<true/>
+	<key>BBLMIsCaseSensitive</key>
+	<true/>
+	<key>BBLMPredefinedNameList</key>
+	<array>
+		<string>dn</string>
+		<string>control</string>
+		<string>changetype</string>
+		<string>add</string>
+		<string>modify</string>
+		<string>replace</string>
+		<string>delete</string>
+	</array>
+	<key>BBLMLanguageCode</key>
+	<string>LDIF</string>
+	<key>BBLMLanguageDisplayName</key>
+	<string>LDAP Data Interchange Format</string>
+	<key>BBLMSuffixMap</key>
+	<array>
+		<dict>
+			<key>BBLMLanguageSuffix</key>
+			<string>.ldif</string>
+			<key>BBLMIsSourceKind</key>
+			<true/>
+		</dict>
+	</array>
+	<key>BBLMScansFunctions</key>
+	<true/>
+	<key>BBLMCommentLineDefault</key>
+	<string>#</string>
+
+	<key>Language Features</key>
+	<dict>
+		<key>Open Line Comments</key>
+		<string>#</string>
+		
+		<key>Function Pattern</key>
+		<string><![CDATA[
+		(?xs:
+			(?P<function>
+				dn:\s+(?P<function_name>.*?$)
+				.*?
+				^$
+			)
+		)
+		]]></string>
+
+		<key>Comment Pattern</key>
+		<string><![CDATA[
+		(?x:
+			(^\#.*)
+		)
+		]]></string>
+		
+		<key>Skip Pattern</key>
+		<string><![CDATA[
+		(?x:
+			(?P>comment)
+		)
+		]]></string>
+		<key>Identifier and Keyword Character Class</key>
+		<string>A-Za-z0-9_.;-</string>
+	</dict>
+</dict>
+</plist>
