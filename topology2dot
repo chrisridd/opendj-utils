@@ -1,0 +1,246 @@
+#!/usr/bin/perl -w
+#
+# Extract OpenDJ replication topology information from a dump of the
+# <cn=monitor> subtree in LDIF format, and output a Graphviz DOT format
+# representation.
+#
+# Limitations:
+# There is no information under <cn=monitor> to identify DS hostnames and
+# port numbers. To determine those, you need to read <cn=admin data> to find
+# all the server names, then connect to each server and read the
+# ds-cfg-replication-domain objects under <cn=config>.
+#
+# The output is not particularly styled, as I import it into OmniGraffle which
+# only interprets a subset of DOT styles.
+
+use strict;
+use warnings;
+use Net::LDAP::LDIF;
+
+# Values for the DOT fillcolor, line and fontcolor attributes for RSes and DSes
+my $rsfill = qq{"#4ea3df"};
+my $rsline = qq{darkblue};
+my $rstext = qq{white};
+
+my $dsfill = qq{"#caf3d9"};
+my $dsline = qq{"#caf3d9"};
+my $dstext = qq{black};
+
+package RS;
+
+sub new {
+	my ($self,$hostname,$port,$rsid) = @_;
+	my $type = ref($self) || $self;
+	my $obj  = bless {}, $type;
+	$obj->{name} = "$hostname:$port";
+	$obj->{rsid} = $rsid;
+	$obj->{domains} = [];
+	return $obj;
+}
+
+sub get_name {
+	my $self = shift;
+	return $self->{name};
+}
+
+sub get_id {
+	my $self = shift;
+	return $self->{rsid};
+}
+
+sub add_domain {
+	my ($self,$domain) = @_;
+	push @{$self->{domains}}, $domain;
+}
+
+sub get_domains {
+	my ($self,$rsid) = @_;
+	return @{$self->{domains}};
+}
+
+1;
+
+package DS;
+
+sub new {
+	my ($self,$hostname,$dsid,$domain) = @_;
+	my $type = ref($self) || $self;
+	my $obj  = bless {}, $type;
+	$obj->{name} = $hostname;
+	$obj->{dsid} = $dsid;
+	$obj->{domain} = $domain;
+	return $obj;
+}
+
+sub get_name {
+	my $self = shift;
+	return $self->{name};
+}
+
+sub get_id {
+	my $self = shift;
+	return $self->{dsid};
+}
+
+sub get_domain {
+	my $self = shift;
+	return $self->{domain};
+}
+
+sub set_rs {
+	my ($self,$rs) = @_;
+	$self->{rs} = $rs;
+}
+
+sub get_rs {
+	my $self = shift;
+	return $self->{rs};
+}
+
+1;
+
+package main;
+
+sub html {
+	my $str = shift;
+	$str =~ s/&/&amp;/g;
+	$str =~ s/</&lt;/g;
+	$str =~ s/>/&gt;/g;
+	return $str;
+}
+
+my $ldif = Net::LDAP::LDIF->new(shift, "r", onerror => 'undef');
+
+my %rs;
+my %rsbyid;
+my %ds;
+my %domain;
+
+while (not $ldif->eof()) {
+	my $entry = $ldif->read_entry();
+	unless ($ldif->error()) {
+		my $dn = $entry->dn();
+		my $serverid = $entry->get_value('server-id');
+		my $domainname = $entry->get_value('domain-name');
+		my $connectedto = $entry->get_value('connected-to');
+		if ($dn =~ m{^cn=Replication Server\s+([^, ]+)\s+([^, ]+)\s+([^, ]+),}i) {
+			# This server is an RS
+			# port hostname rsid
+			my $server = $rs{"$2:$1"};
+			$server = new RS($2, $1, $3) unless defined($server);
+			$rs{"$2:$1"} = $server;
+			$rsbyid{$3} = $server;
+			$server->add_domain($domainname);
+		} elsif ($dn =~ m{^cn=Connected Replication Server\s+([^:]+):(\d+)\s+([^,]+),}i) {
+			# This entry is another RS
+			# hostname port rsid
+			my $server = $rs{"$1:$2"};
+			$server = new RS($1, $2, $3) unless defined($server);
+			$rs{"$1:$2"} = $server;
+			$rsbyid{$3} = $server;
+			$server->add_domain($domainname);
+		} elsif ($dn =~ m{^cn=Connected Replica ([^, ]+)\s+(\d+),}i) {
+			# This entry is a DS connected to this server
+			# hostname dsid
+			# no other server info
+			my $server = new DS($1, $2, $domainname);
+			$ds{"$1 $2"} = $server;
+			if ($connectedto =~ m{^Replication Server (\d+) (\d+)}) {
+				$server->set_rs($rsbyid{$2});
+			}
+		} elsif ($dn =~ m{^cn=Undirect Replica\s+([^,]+),}i) {
+			# This entry is a DS connected to another RS
+			# dsid
+			my $server = new DS("unknown", $1, $domainname);
+			$ds{"unknown $1"} = $server;
+			if ($connectedto =~ m{Connected Replication Server\s+([^, ]+)\s(\d+),}) {
+				$server->set_rs($rsbyid{$2});
+			}
+		}
+	}
+}
+
+print "graph replication {\n";
+
+my @rslinks;
+foreach (sort(keys(%rs))) {
+	my $server = $rs{$_};
+	my $rsid = $server->get_id();
+	print "  rs$rsid [shape=box,fillcolor=$rsfill,fontcolor=$rstext]\n";
+	print "  rs$rsid [label=<", html($server->get_name()), " (", html($server->get_id()), ")";
+	foreach my $domain (sort $server->get_domains()) {
+		print "<BR/>", html($domain);
+	}
+	print ">]\n";
+	print "\n";
+	push @rslinks, "rs$rsid";
+}
+
+# Fully meshed RSes
+while (scalar(@rslinks) > 1) {
+	my $t = shift @rslinks;
+	foreach (@rslinks) {
+		print "  $t -> $_ [color=$rsline]\n";
+	}
+}
+
+foreach (sort(keys(%ds))) {
+	my $server = $ds{$_};
+	my $dsid = $server->get_id();
+	print "\n";
+	print "  ds$dsid [shape=box,fillcolor=$dsfill,fontcolor=$dstext]\n";
+	print "  ds$dsid [label=<", html($server->get_name()), " (", html($server->get_id()), ")<BR/>", html($server->get_domain()), ">]\n";
+	my $rsid = $server->get_rs()->get_id();
+	print "  ds$dsid -> rs$rsid [color=$dsline]\n";
+}
+
+print "}\n";
+
+exit 0;
+
+__END__
+
+=head1 NAME
+
+topology2dot -  display OpenDJ replication topology in GraphViz DOT format
+
+=head1 SYNOPSIS
+
+topology2dot < monitor.ldif
+
+=head1 DESCRIPTION
+
+The topology of a network of replicated OpenDJ servers can be determined by
+analysis of a complete dump of the E<lt>cn=monitorE<gt> subtree.
+
+This tool extracts as much useful information as possible and outputs a
+graph in GraphViz DOT format. The replication servers are drawn in blue boxes,
+and the directory servers are drawn in green boxes.
+
+The first line of each label contains the hostname and administration port
+number of the server (if available) and the server-id in parentheses. The
+remaining lines list the suffixes being replicated.
+
+=head1 NOTE
+
+The format of the entries in the E<lt>cn=monitorE<gt> subtree is subject to
+change. This tool has been tested with OpenDJ 2.5.
+
+Full details of the connected directory servers are not currently available.
+One directory server would typically have 3 or more separate server-ids, each
+replicating a separate suffix.
+
+When importing into OmniGraffle, it is usually best to use a "Circular" layout.
+
+=head1 SEE ALSO
+
+L<http://opendj.forgerock.org>
+
+=head1 AUTHOR
+
+Chris Ridd E<lt>chris.ridd@forgerock.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2013 Chris Ridd. All rights reserved. This tool is free software;
+you can redistribute it and/or modify it under the same terms as Perl itself.
