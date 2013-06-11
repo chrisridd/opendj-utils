@@ -67,7 +67,7 @@ __END__
 
 =head1 NAME
 
-dumpber -  dump BER-encoded data as text
+dumpber -  pretty-print BER-encoded data
 
 =head1 SYNOPSIS
 
