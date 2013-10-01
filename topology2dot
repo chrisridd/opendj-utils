@@ -23,7 +23,7 @@ my $rsline = qq{darkblue};
 my $rstext = qq{white};
 
 my $dsfill = qq{"#caf3d9"};
-my $dsline = qq{"#caf3d9"};
+my $dsline = qq{"#9ebfab"};
 my $dstext = qq{black};
 
 package RS;
@@ -109,6 +109,13 @@ sub html {
 	return $str;
 }
 
+my %ignore;
+
+foreach (@ARGV) {
+	$ignore{$_} = 1;
+}
+@ARGV = ();
+
 my $ldif = Net::LDAP::LDIF->new(shift, "r", onerror => 'undef');
 
 my %rs;
@@ -122,6 +129,8 @@ while (not $ldif->eof()) {
 		my $dn = $entry->dn();
 		my $serverid = $entry->get_value('server-id');
 		my $domainname = $entry->get_value('domain-name');
+		next if defined($domainname) && exists $ignore{$domainname};
+
 		my $connectedto = $entry->get_value('connected-to');
 		# 2.6.0: cn=Replication server RS(...) hostname:port
 		if ($dn =~ m{^cn=Replication server RS\((\d+)\) ([^:]+):(\d+),}i) {
@@ -252,7 +261,7 @@ topology2dot -  display OpenDJ replication topology in GraphViz DOT format
 
 =head1 SYNOPSIS
 
-topology2dot < monitor.ldif
+topology2dot [ignored-suffix [...]] < monitor.ldif
 
 =head1 DESCRIPTION
 
