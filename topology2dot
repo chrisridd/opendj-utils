@@ -123,7 +123,16 @@ while (not $ldif->eof()) {
 		my $serverid = $entry->get_value('server-id');
 		my $domainname = $entry->get_value('domain-name');
 		my $connectedto = $entry->get_value('connected-to');
-		if ($dn =~ m{^cn=Replication Server\s+([^, ]+)\s+([^, ]+)\s+([^, ]+),}i) {
+		# 2.6.0: cn=Replication server RS(...) hostname:port
+		if ($dn =~ m{^cn=Replication server RS\((\d+)\) ([^:]+):(\d+),}i) {
+			# This server is the RS
+			my $server = $rs{"$2:$3"};
+			$server = new RS($2, $3, $1) unless defined($server);
+			$rs{"$2:$3"} = $server;
+			$rsbyid{$1} = $server;
+			$server->add_domain($domainname);
+		# 2.5.x:
+		} elsif ($dn =~ m{^cn=Replication Server\s+([^, ]+)\s+([^, ]+)\s+([^, ]+),}i) {
 			# This server is an RS
 			# port hostname rsid
 			my $server = $rs{"$2:$1"};
@@ -131,6 +140,15 @@ while (not $ldif->eof()) {
 			$rs{"$2:$1"} = $server;
 			$rsbyid{$3} = $server;
 			$server->add_domain($domainname);
+		# 2.6.0: cn=Connected replication server RS(...) hostname:port
+		} elsif ($dn =~ m{^cn=Connected replication server RS\((\d+)\) ([^:]+):(\d+),}i) {
+			# Another RS (not this one)
+			my $server = $rs{"$2:$3"};
+			$server = new RS($2, $3, $1) unless defined($server);
+			$rs{"$2:$3"} = $server;
+			$rsbyid{$1} = $server;
+			$server->add_domain($domainname);
+		# 2.5.x
 		} elsif ($dn =~ m{^cn=Connected Replication Server\s+([^:]+):(\d+)\s+([^,]+),}i) {
 			# This entry is another RS
 			# hostname port rsid
@@ -139,6 +157,12 @@ while (not $ldif->eof()) {
 			$rs{"$1:$2"} = $server;
 			$rsbyid{$3} = $server;
 			$server->add_domain($domainname);
+		# 2.6.0: cn=Directory server DS(...) hostname:port
+		} elsif ($dn =~ m{^cn=Directory Server DS\((\d+)\) ([^:]+):(\d+),}i) {
+			# 2.6.0 DS connected to that server
+			my $server = new DS("$2:$3", $1, $domainname);
+			$ds{"$2:$3"} = $server;
+		# 2.5.x
 		} elsif ($dn =~ m{^cn=Connected Replica ([^, ]+)\s+(\d+),}i) {
 			# This entry is a DS connected to this server
 			# hostname dsid
@@ -148,6 +172,16 @@ while (not $ldif->eof()) {
 			if ($connectedto =~ m{^Replication Server (\d+) (\d+)}) {
 				$server->set_rs($rsbyid{$2});
 			}
+		# 2.6.0: cn=Connected directory server DS(...) hostname:port
+		} elsif ($dn =~ m{^cn=Connected directory server DS\((\d+)\) ([^:]+):(\d+),}i) {
+			my $server = new DS("$2:$3", $1, $domainname);
+			$ds{"$2:$3"} = $server;
+			if ($connectedto =~ m{Connected replication server RS\((\d+)\) }) {
+				$server->set_rs($1);
+			} elsif ($connectedto =~ m{Replication Server (\d+) (\d+)}) {
+				$server->set_rs($2);
+			}
+		# 2.5.x
 		} elsif ($dn =~ m{^cn=Undirect Replica\s+([^,]+),}i) {
 			# This entry is a DS connected to another RS
 			# dsid
@@ -157,6 +191,18 @@ while (not $ldif->eof()) {
 				$server->set_rs($rsbyid{$2});
 			}
 		}
+	}
+}
+
+# Post-process the DSes so they point to RS objects
+# (DSes could be written before the RSes in the monitor output)
+foreach (keys(%ds)) {
+	my $server = $ds{$_};
+	my $rsid = $server->get_rs();
+	my $rs = undef;
+	if ($rsid =~ m{^\d+$}) {
+		$rs = $rsbyid{$rsid};
+		$server->set_rs($rs) if defined $rs;
 	}
 }
 
@@ -224,7 +270,7 @@ remaining lines list the suffixes being replicated.
 =head1 NOTE
 
 The format of the entries in the E<lt>cn=monitorE<gt> subtree is subject to
-change. This tool has been tested with OpenDJ 2.5.
+change. This tool has been tested with OpenDJ 2.5 and 2.6.0.
 
 Full details of the connected directory servers are not currently available.
 One directory server would typically have 3 or more separate server-ids, each
