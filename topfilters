@@ -45,9 +45,11 @@ while (<>) {
 	if (my ($scope,$filter) = m{SEARCH REQ.* scope=(\S+) filter="([^\"]+)"}) {
 		next if $scope =~ m{baseObject};
 		$filter = lc($filter);
-		$filter =~ s{\(([a-z0-9_-]+)=[^\*\)]+\)}{($1=EQUALITY)}gix;
-		$filter =~ s{\(([a-z0-9_-]+)=\*\)}{($1=PRESENCE)}gix;
-		$filter =~ s{\(([a-z0-9_-]+)=[^\*]*\*[^\)]*\)}{($1=SUBSTRING)}gix;
+		$filter =~ s{\(([a-z0-9_-]+)=[^\*\)]+\)}{($1=EQUALITY)}gi;
+		$filter =~ s{\(([a-z0-9_-]+)>=[^\*\)]+\)}{($1=ORDERING)}gi;
+		$filter =~ s{\(([a-z0-9_-]+)<=[^\*\)]+\)}{($1=ORDERING)}gi;
+		$filter =~ s{\(([a-z0-9_-]+)=\*\)}{($1=PRESENCE)}gi;
+		$filter =~ s{\(([a-z0-9_-]+)=[^\*]*\*[^\)]*\)}{($1=SUBSTRING)}gi;
 		$filter{$filter}++;
 	}
 }
@@ -105,8 +107,8 @@ $ topfilters < access
 (objectclass=EQUALITY): 3002
 (objectclass=PRESENCE): 430
 (ds-task-id=EQUALITY): 25
-(telephoneNumber=EQUALITY): 7
-(&(cn=PRESENCE)(telephoneNumber=EQUALITY)): 1
+(telephonenumber=EQUALITY): 7
+(&(cn=PRESENCE)(telephonenumber=EQUALITY)): 1
 
 =head1 SEE ALSO
 
