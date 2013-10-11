@@ -1,0 +1,122 @@
+#!/usr/bin/perl -w
+# Find the most popular search filters
+
+use strict;
+use warnings;
+
+$::VERSION = 0.1;
+
+sub version()
+{
+	print STDERR "$0 version $::VERSION\n";
+	exit 0;
+}
+
+sub usage()
+{
+	print STDERR "Usage: $0\n";
+	exit 1;
+}
+
+my %opt = (
+	'h' => 0,                   # Help
+	'v' => 0,                   # Version
+);
+
+while (@ARGV) {
+	my $arg = shift @ARGV;
+	if ($arg =~ m{^-h$|^--help$}) {
+		$opt{h} = 1;
+	} elsif ($arg =~ m{^-v$|^--version$}) {
+		$opt{v} = 1;
+	} else {
+		push @ARGV, $arg;
+		last;
+	}
+}
+
+version if $opt{v};
+usage if $opt{h};
+
+my %filter;
+
+while (<>) {
+	chomp;
+	if (my ($scope,$filter) = m{SEARCH REQ.* scope=(\S+) filter="([^\"]+)"}) {
+		next if $scope =~ m{baseObject};
+		$filter = lc($filter);
+		$filter =~ s{\(([a-z0-9_-]+)=[^\*\)]+\)}{($1=EQUALITY)}gix;
+		$filter =~ s{\(([a-z0-9_-]+)=\*\)}{($1=PRESENCE)}gix;
+		$filter =~ s{\(([a-z0-9_-]+)=[^\*]*\*[^\)]*\)}{($1=SUBSTRING)}gix;
+		$filter{$filter}++;
+	}
+}
+
+format STDOUT_TOP =
+ frequency filter
+.
+format =
+@>>>>>>>>> ^*
+$::freq, $::filt
+.
+
+foreach our $filt (sort { $filter{$b} <=> $filter{$a} } keys(%filter)) {
+	our $freq = $filter{$filt};
+	write;
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+topfilters -  analyze search filters in OpenDJ logs
+
+=head1 SYNOPSIS
+
+topfilters
+
+topfilters -h
+
+topfilters -v
+
+=head1 DESCRIPTION
+
+OpenDJ access log files include the filters used for all search operations.
+Filters for baseObject searches are not indexable, but all others are.
+
+This tool outputs a list of filter types, ordered by frequency.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-h> display help text.
+
+=item B<-v> report the tool version.
+
+=back
+
+=head1 EXAMPLE
+
+$ topfilters < access
+
+(objectclass=EQUALITY): 3002
+(objectclass=PRESENCE): 430
+(ds-task-id=EQUALITY): 25
+(telephoneNumber=EQUALITY): 7
+(&(cn=PRESENCE)(telephoneNumber=EQUALITY)): 1
+
+=head1 SEE ALSO
+
+L<http://opendj.forgerock.org>
+
+=head1 AUTHOR
+
+Chris Ridd E<lt>chris.ridd@forgerock.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2013 Chris Ridd. All rights reserved. This tool is free software;
+you can redistribute it and/or modify it under the same terms as Perl itself.
