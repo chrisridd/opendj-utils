@@ -5,10 +5,10 @@
 # representation.
 #
 # Limitations:
-# There is no information under <cn=monitor> to identify DS hostnames and
-# port numbers. To determine those, you need to read <cn=admin data> to find
-# all the server names, then connect to each server and read the
-# ds-cfg-replication-domain objects under <cn=config>.
+# From 2.6.0 it is possible to see more information about each DS. However it is
+# not possible to determine which DSes are part of the same OpenDJ server, so
+# the output shows more DSes than you would initially expect. Ignoring certain
+# suffixes like <cn=admin data> and <cn=schema> can be helpful.
 #
 # The output is not particularly styled, as I import it into OmniGraffle which
 # only interprets a subset of DOT styles.
@@ -209,12 +209,13 @@ foreach (keys(%ds)) {
 	my $server = $ds{$_};
 	my $rsid = $server->get_rs();
 	my $rs = undef;
-	if ($rsid =~ m{^\d+$}) {
+	unless (ref($rsid)) {
 		$rs = $rsbyid{$rsid};
 		$server->set_rs($rs) if defined $rs;
 	}
 }
 
+print "// OpenDJ Replication topology\n";
 print "graph replication {\n";
 
 my @rslinks;
