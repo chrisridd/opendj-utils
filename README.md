@@ -5,6 +5,7 @@ Some small utilities for the [OpenDJ LDAP server](http://opendj.forgerock.org/).
 
 * slowops - analyzes operation times in access logs
 * topfilters - analyze search filters in OpenDJ logs
+* watchdn - watch for operations affecting a given DN in access logs
 * decodecsn - decodes replication CSNs
 * topology2dot - displays a replication topology in Graphviz DOT format
 * dumpber - pretty-print BER-encoded files
