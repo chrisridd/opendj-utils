@@ -70,10 +70,12 @@ while (<>) {
 		if (exists $details{$tuple}) {
 			my $details = $details{$tuple};
 			delete $details{$tuple};
+			my $nentries = "";
+			$nentries = $1 if m{( nentries=\d+)};
 			my $unindexed = "";
 			$unindexed = " unindexed" if m{ unindexed etime=};
 			if ($opt{e} != -1 && $etime >= $opt{e}) {
-				print "$details$unindexed etime=$etime\n";
+				print "$details$nentries$unindexed etime=$etime\n";
 			}
 			if ($opt{'s'}) {
 				$sum += $etime;
