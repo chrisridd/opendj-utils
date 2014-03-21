@@ -1,0 +1,102 @@
+#!/usr/bin/perl -w
+# Find all operations relating to a particular DN
+
+use strict;
+use warnings;
+
+$::VERSION = 0.1;
+
+sub version()
+{
+	print STDERR "$0 version $::VERSION\n";
+	exit 0;
+}
+
+sub usage()
+{
+	print STDERR "Usage: $0 [-v] [-h] dn\n";
+	exit 1;
+}
+
+my %opt = (
+	'h' => 0,                   # Help
+	'v' => 0,                   # Version
+);
+
+my $dn = "cn=Directory Manager";
+
+while (@ARGV) {
+	my $arg = shift @ARGV;
+	if ($arg =~ m{^-h$|^--help$}) {
+		$opt{h} = 1;
+	} elsif ($arg =~ m{^-v$|^--version$}) {
+		$opt{v} = 1;
+	} else {
+		$dn = $arg;
+		last;
+	}
+}
+
+version if $opt{v};
+usage if $opt{h};
+
+my %tuple;
+
+while(<>) {
+	chomp;
+	if (my ($t) = m{ REQ (conn=[-0-9]+ op=[0-9]+ msgID=[0-9]+) (base|dn|authDN)="$dn"}i) {
+		print "$_\n";
+		$tuple{$t} = 1;
+		next;
+	}
+	if (my ($t) = m{ RES (conn=[-0-9]+ op=[0-9]+ msgID=[0-9]+) }) {
+		print "$_\n" if exists $tuple{$t};
+		delete $tuple{$t};
+		next;
+	}
+}
+
+1;
+
+__END__
+
+=head1 NAME
+
+watchdn -  analyze operations for a particular DN in OpenDJ log files
+
+=head1 SYNOPSIS
+
+watchdn dn
+
+watchdn -h
+
+watchdn -v
+
+=head1 DESCRIPTION
+
+OpenDJ access log files record the requests and result for LDAP operations on
+separate log lines by default. With a busy server, this can make following the
+operations on a particular DN somewhat challenging.
+
+This tool reports all operations and results affecting a given DN.
+
+=head1 OPTIONS
+
+=over
+
+=item B<-h> display help text.
+
+=item B<-v> report the tool version.
+
+=item B<dn> the LDAP DN that needs to be monitored.
+
+=back
+
+=head1 AUTHOR
+
+Chris Ridd E<lt>chris.ridd@forgerock.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014 Chris Ridd. All rights reserved. This tool is free software;
+you can redistribute it and/or modify it under the same terms as Perl itself.
