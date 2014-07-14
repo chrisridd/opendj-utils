@@ -1,0 +1,341 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		67CA66F41973F187003C96CD /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67CA66F31973F187003C96CD /* Security.framework */; };
+		67EF594A196968DA00787F39 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67EF5949196968DA00787F39 /* CoreFoundation.framework */; };
+		67EF5950196968DA00787F39 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 67EF594E196968DA00787F39 /* InfoPlist.strings */; };
+		67EF59581969693700787F39 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67EF59571969693700787F39 /* Carbon.framework */; };
+		67EF596A196969A600787F39 /* LDIF.cp in Sources */ = {isa = PBXBuildFile; fileRef = 67EF5969196969A600787F39 /* LDIF.cp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		67CA66F31973F187003C96CD /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		67EF5946196968DA00787F39 /* LDIF.bblm */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LDIF.bblm; sourceTree = BUILT_PRODUCTS_DIR; };
+		67EF5949196968DA00787F39 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		67EF594D196968DA00787F39 /* LDIF-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "LDIF-Info.plist"; sourceTree = "<group>"; };
+		67EF594F196968DA00787F39 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		67EF5951196968DA00787F39 /* LDIF-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "LDIF-Prefix.pch"; sourceTree = "<group>"; };
+		67EF59571969693700787F39 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		67EF595B1969696E00787F39 /* BBLMInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBLMInterface.h; sourceTree = "<group>"; };
+		67EF595C1969696E00787F39 /* BBLMTextIterator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBLMTextIterator.h; sourceTree = "<group>"; };
+		67EF595D1969696E00787F39 /* BBLMTextUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BBLMTextUtils.cpp; sourceTree = "<group>"; };
+		67EF595E1969696E00787F39 /* BBLMTextUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBLMTextUtils.h; sourceTree = "<group>"; };
+		67EF595F1969696E00787F39 /* BBLMToken.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBLMToken.h; sourceTree = "<group>"; };
+		67EF59601969696E00787F39 /* BBLMTypes.r */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.rez; path = BBLMTypes.r; sourceTree = "<group>"; };
+		67EF59611969696E00787F39 /* History.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = History.h; sourceTree = "<group>"; };
+		67EF59631969696E00787F39 /* BBEditTypes.r */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.rez; path = BBEditTypes.r; sourceTree = "<group>"; };
+		67EF59641969696E00787F39 /* BBTLInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBTLInterface.h; sourceTree = "<group>"; };
+		67EF59651969696E00787F39 /* BBXTImplementationMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBXTImplementationMacros.h; sourceTree = "<group>"; };
+		67EF59661969696E00787F39 /* BBXTInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBXTInterface.h; sourceTree = "<group>"; };
+		67EF59671969696E00787F39 /* BBXTInterfaceStructsAndEnums.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBXTInterfaceStructsAndEnums.h; sourceTree = "<group>"; };
+		67EF5969196969A600787F39 /* LDIF.cp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LDIF.cp; path = LDIF/LDIF.cp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		67EF5943196968D900787F39 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67CA66F41973F187003C96CD /* Security.framework in Frameworks */,
+				67EF59581969693700787F39 /* Carbon.framework in Frameworks */,
+				67EF594A196968DA00787F39 /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		67EF593D196968D900787F39 = {
+			isa = PBXGroup;
+			children = (
+				67EF5969196969A600787F39 /* LDIF.cp */,
+				67EF59591969696E00787F39 /* Interfaces */,
+				67EF594B196968DA00787F39 /* LDIF */,
+				67EF5948196968DA00787F39 /* Frameworks */,
+				67EF5947196968DA00787F39 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		67EF5947196968DA00787F39 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				67EF5946196968DA00787F39 /* LDIF.bblm */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		67EF5948196968DA00787F39 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				67CA66F31973F187003C96CD /* Security.framework */,
+				67EF59571969693700787F39 /* Carbon.framework */,
+				67EF5949196968DA00787F39 /* CoreFoundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		67EF594B196968DA00787F39 /* LDIF */ = {
+			isa = PBXGroup;
+			children = (
+				67EF594C196968DA00787F39 /* Supporting Files */,
+			);
+			path = LDIF;
+			sourceTree = "<group>";
+		};
+		67EF594C196968DA00787F39 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				67EF594D196968DA00787F39 /* LDIF-Info.plist */,
+				67EF594E196968DA00787F39 /* InfoPlist.strings */,
+				67EF5951196968DA00787F39 /* LDIF-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		67EF59591969696E00787F39 /* Interfaces */ = {
+			isa = PBXGroup;
+			children = (
+				67EF595A1969696E00787F39 /* Language Modules */,
+				67EF59621969696E00787F39 /* Tools */,
+			);
+			path = Interfaces;
+			sourceTree = "<group>";
+		};
+		67EF595A1969696E00787F39 /* Language Modules */ = {
+			isa = PBXGroup;
+			children = (
+				67EF595B1969696E00787F39 /* BBLMInterface.h */,
+				67EF595C1969696E00787F39 /* BBLMTextIterator.h */,
+				67EF595D1969696E00787F39 /* BBLMTextUtils.cpp */,
+				67EF595E1969696E00787F39 /* BBLMTextUtils.h */,
+				67EF595F1969696E00787F39 /* BBLMToken.h */,
+				67EF59601969696E00787F39 /* BBLMTypes.r */,
+				67EF59611969696E00787F39 /* History.h */,
+			);
+			path = "Language Modules";
+			sourceTree = "<group>";
+		};
+		67EF59621969696E00787F39 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				67EF59631969696E00787F39 /* BBEditTypes.r */,
+				67EF59641969696E00787F39 /* BBTLInterface.h */,
+				67EF59651969696E00787F39 /* BBXTImplementationMacros.h */,
+				67EF59661969696E00787F39 /* BBXTInterface.h */,
+				67EF59671969696E00787F39 /* BBXTInterfaceStructsAndEnums.h */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		67EF5945196968D900787F39 /* LDIF */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 67EF5954196968DA00787F39 /* Build configuration list for PBXNativeTarget "LDIF" */;
+			buildPhases = (
+				67EF5942196968D900787F39 /* Sources */,
+				67EF5943196968D900787F39 /* Frameworks */,
+				67EF5944196968D900787F39 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LDIF;
+			productName = LDIF;
+			productReference = 67EF5946196968DA00787F39 /* LDIF.bblm */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		67EF593E196968D900787F39 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+				ORGANIZATIONNAME = "Chris Ridd";
+			};
+			buildConfigurationList = 67EF5941196968D900787F39 /* Build configuration list for PBXProject "LDIF" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 67EF593D196968D900787F39;
+			productRefGroup = 67EF5947196968DA00787F39 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				67EF5945196968D900787F39 /* LDIF */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		67EF5944196968D900787F39 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67EF5950196968DA00787F39 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		67EF5942196968D900787F39 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67EF596A196969A600787F39 /* LDIF.cp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		67EF594E196968DA00787F39 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				67EF594F196968DA00787F39 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		67EF5952196968DA00787F39 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "Interfaces/**";
+			};
+			name = Debug;
+		};
+		67EF5953196968DA00787F39 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "Interfaces/**";
+			};
+			name = Release;
+		};
+		67EF5955196968DA00787F39 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "LDIF/LDIF-Prefix.pch";
+				INFOPLIST_FILE = "LDIF/LDIF-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = bblm;
+			};
+			name = Debug;
+		};
+		67EF5956196968DA00787F39 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "LDIF/LDIF-Prefix.pch";
+				INFOPLIST_FILE = "LDIF/LDIF-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = bblm;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		67EF5941196968D900787F39 /* Build configuration list for PBXProject "LDIF" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				67EF5952196968DA00787F39 /* Debug */,
+				67EF5953196968DA00787F39 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		67EF5954196968DA00787F39 /* Build configuration list for PBXNativeTarget "LDIF" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				67EF5955196968DA00787F39 /* Debug */,
+				67EF5956196968DA00787F39 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 67EF593E196968D900787F39 /* Project object */;
+}
