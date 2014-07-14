@@ -44,7 +44,7 @@ my %tuple;
 
 while(<>) {
 	chomp;
-	if (my ($t) = m{ REQ (conn=[-0-9]+ op=[0-9]+ msgID=[0-9]+) (base|dn|authDN)="$dn"}i) {
+	if (my ($t) = m{ REQ (conn=[-0-9]+ op=[0-9]+ msgID=[0-9]+).*(base|dn|authDN)="$dn"}i) {
 		print "$_\n";
 		$tuple{$t} = 1;
 		next;
