@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+	BBEdit codeless language module for jstack files.
+	Chris Ridd <chris.ridd@forgerock.com>
+
+	Released under the Common Development and Distribution License (CDDL) 1.0
+	<http://opensource.org/licenses/cddl1.txt>
+
+	Requires BBEdit/TextWrangler 8.0 or higher. To install, copy here:
+	
+		~/Library/Application Support/BBEdit/Language Modules/
+	or:
+		~/Library/Application Support/TextWrangler/Language Modules/
+
+	and relaunch.
+-->
+<dict>
+	<key>BBEditDocumentType</key>
+	<string>CodelessLanguageModule</string>
+	<key>BBLMColorsSyntax</key>
+	<true/>
+	<key>BBLMIsCaseSensitive</key>
+	<true/>
+	<key>BBLMPredefinedNameList</key>
+	<array>
+		<string>TIMED_WAITING</string>
+		<string>RUNNABLE</string>
+		<string>WAITING</string>
+	</array>
+	<key>BBLMLanguageCode</key>
+	<string>JSTK</string>
+	<key>BBLMLanguageDisplayName</key>
+	<string>Java Jstack</string>
+	<key>BBLMSuffixMap</key>
+	<array>
+		<dict>
+			<key>BBLMLanguageSuffix</key>
+			<string>.jstack</string>
+			<key>BBLMIsSourceKind</key>
+			<true/>
+		</dict>
+	</array>
+	<key>BBLMScansFunctions</key>
+	<true/>
+
+	<key>Language Features</key>
+	<dict>
+		<key>Function Pattern</key>
+		<string><![CDATA[
+		(?xs:
+			(?P<function>
+				^"(?P<function_name>.*?)"\s(daemon\s)?prio=
+				.*?
+				^$
+			)
+		)
+		]]></string>
+
+		<key>Identifier and Keyword Character Class</key>
+		<string>A-Za-z0-9_.;"-</string>
+	</dict>
+</dict>
+</plist>
