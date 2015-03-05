@@ -3,21 +3,33 @@
 use strict;
 use warnings;
 use bignum qw(hex);
+use DateTime;
 
-use POSIX qw(strftime);
-
-unless ($#ARGV >= 0) {
-	print STDERR "Usage: $0 csn [...]\n";
+sub usage() {
+	print STDERR "Usage: $0 [-z timezone] csn [...]\n";
 	exit 1;
 }
 
+usage unless $#ARGV >= 0;
+
+my $zone;
+
+if ($ARGV[0] eq "-z") {
+	shift @ARGV;
+	$zone = shift @ARGV;
+	usage unless defined $zone;
+}
+
+$zone = DateTime::TimeZone->new(name => defined($zone) ? $zone : 'local');
+
 foreach (@ARGV) {
 	if (my($ts,$id,$no) = m{^(................)(....)(........)$}) {
-		my $ts_dec = hex($ts); # Value is 64-bits
+		my $ts_dec = hex($ts); # Value is 64-bits hence using bignum
 		my $id_dec = hex($id);
 		my $no_dec = hex($no);
-		my $ms = sprintf "%03d", $ts_dec % 1000;
-		my $ts_str = strftime "%a %b %e %Y %H:%M:%S.$ms", localtime($ts_dec/1000);
+		my $time = DateTime->from_epoch( epoch => $ts_dec / 1000 ); # UTC
+		$time->set_time_zone($zone);
+		my $ts_str = $time->strftime("%a %b %e %Y %H:%M:%S.%3N %Z");
 		print "CSN $_\n  ts=$ts ($ts_dec) $ts_str\n  id=$id ($id_dec)\n  no=$no ($no_dec)\n";
 		next;
 	}
@@ -34,7 +46,7 @@ decodecsn -  decode OpenDJ change sequence numbers
 
 =head1 SYNOPSIS
 
-decodecsn csn [...]
+decodecsn [-z timezone] csn [...]
 
 =head1 DESCRIPTION
 
@@ -47,23 +59,40 @@ This tool decodes CSNs.
 
 =over
 
+=item B<-z> use the following timezone name or offset instead of localtime to
+display the date and time in the CSN.
+
 =item B<csn> a change sequence number encoded in hex.
 
 =back
 
-=head1 EXAMPLE
+=head1 EXAMPLES
 
-$ decodecsn 0000013a8c81e8280b5a00000004
+$ decodecsn 0000014bcd10fe1562cd0083a482
 
-CSN 0000013a8c81e8280b5a00000004
-  ts=0000013a8c81e828 (1350977054760) Tue Oct 23 2012 08:24:14.760
-  id=0b5a (2906)
-  no=00000004 (4)
+CSN 0000014bcd10fe1562cd0083a482
+  ts=0000014bcd10fe15 (1425074617877) Fri Feb 27 2015 22:03:37.877 GMT
+  id=62cd (25293)
+  no=0083a482 (8627330)
+
+$ decodecsn -z America/Los_Angeles 0000014bcd10fe1562cd0083a482
+
+CSN 0000014bcd10fe1562cd0083a482
+  ts=0000014bcd10fe15 (1425074617877) Fri Feb 27 2015 14:03:37.877 PST
+  id=62cd (25293)
+  no=0083a482 (8627330)
+
+$  decodecsn -z -0500 0000014bcd10fe1562cd0083a482
+
+CSN 0000014bcd10fe1562cd0083a482
+  ts=0000014bcd10fe15 (1425074617877) Fri Feb 27 2015 17:03:37.877 -0500
+  id=62cd (25293)
+  no=0083a482 (8627330)
 
 =head1 WARNING
 
 The format of the CSN is undocumented and subject to change. This tool has been
-tested with OpenDJ 2.4 and OpenDJ 2.5.
+tested with OpenDJ 2.4 and OpenDJ 2.6.
 
 =head1 SEE ALSO
 
@@ -75,5 +104,6 @@ Chris Ridd E<lt>chris.ridd@forgerock.comE<gt>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2012 Chris Ridd. All rights reserved. This tool is free software;
-you can redistribute it and/or modify it under the same terms as Perl itself.
+Copyright (c) 2012-2014 Chris Ridd. All rights reserved. This tool is free
+software; you can redistribute it and/or modify it under the same terms as Perl
+itself.

@@ -25,3 +25,9 @@ if you've installed it first and restart BBEdit/TextWrangler.
 
 This version understands wrapped lines, and does some smarter keyword colouring.
 It will decode any base64-encoded DNs before putting them in the function list.
+
+There's an extra codeless language module for easily navigating Java jstack
+output. There's no standard filename extension for these.
+
+Install the jstack.plist file into the Language Modules directory as described
+above.
