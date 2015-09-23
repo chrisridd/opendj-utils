@@ -66,16 +66,14 @@ while (<>) {
 		$details{$tuple} = $_;
 		next;
 	}
-	if (my ($tuple,$etime) = m{$op RES.*(conn=-?\d+ op=\d+ msgID=\d+).*etime=(\d+)}) {
+	if (my ($tuple,$remainder) = m{$op RES.*(conn=-?\d+ op=\d+ msgID=\d+)( +.*)}) {
 		if (exists $details{$tuple}) {
 			my $details = $details{$tuple};
 			delete $details{$tuple};
-			my $nentries = "";
-			$nentries = $1 if m{( nentries=\d+)};
-			my $unindexed = "";
-			$unindexed = " unindexed" if m{ unindexed etime=};
+			my $etime = "";
+			$etime = $1 if $remainder =~ m{ etime=(\d+)};
 			if ($opt{e} != -1 && $etime >= $opt{e}) {
-				print "$details$nentries$unindexed etime=$etime\n";
+				print "$details$remainder\n";
 			}
 			if ($opt{'s'}) {
 				$sum += $etime;
