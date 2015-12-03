@@ -1,75 +1,12 @@
+//	-*- mode: objective-c++; coding: utf-8; -*-
+
 #ifndef BBLMINTERFACE_h
 #define BBLMINTERFACE_h 1
 
 enum
 {
-	kBBLMCurrentCallbackVersion = 0x00000006
+	kBBLMCurrentCallbackVersion = 0x00000007
 };
-
-typedef	enum
-{
-	kBBLMScansFunctions					=	0x00000001,
-	kBBLMColorsSyntax					=	0x00000002,
-	kBBLMWantsToolboxColors				=	0x00000004,
-	kBBLMIsMultiByteAware				=	0x00000008,
-	kBBLMIsCaseSensitive				=	0x00000010,
-	kBBLMReserved0						=	0x00000020,	//	reserved for future expansion
-	
-	//	the following flags are ignored by any version of BBEdit prior
-	//	to 6.1
-	
-	kBBLMUseNormalFileSearchRules		=	0x00000040,
-	kBBLMUseHTMLFileSearchRules			=	0x00000080,
-	
-	kBBLMHFSPathsForDroppedFiles		=	0x00000100,
-	kBBLMUnixPathsForDroppedFiles		=	0x00000200,
-	kBBLMPlatformPathsForDroppedFiles	=	0x00000400,
-	kBBLMURLsForDroppedFiles			=	0x00000800,
-	
-	kBBLMDropFilePathFlags				=	0x00000F00,	//	(OR of the above flags)
-	
-	//	the following flags are ignored by any version of BBEdit prior
-	//	to 6.5
-	
-	kBBLMCanGuessLanguage				=	0x00001000,
-
-	//	the following flags are ignored by any version of BBEdit prior
-	//	to 7.0
-	
-	kBBLMCanLoadCarbonFragmentsOn9		 =	0x00002000,	//	ignored by BBEdit 8.0 and later
-
-	//	the following flags are ignored by any version of BBEdit prior
-	//	to 8.5
-	
-	kBBLMScansForFoldRanges				=	0x00004000,
-	kBBLMFunctionScannerDoesFoldsToo	=	0x00008000,
-
-	kBBLMAlwaysGuessLanguage			=	0x00010000,
-	
-	kBBLMFiltersRunsForSpellChecking	=	0x00020000,
-
-	kBBLMSupportsOneByteKeywordLookups	=	0x00040000,
-	kBBLMSupportsCFStringKeywordLookups	=	0x00080000,
-	
-	kBBLMSupportsSubrangeFunctionScan	=	0x00100000,
-
-	//	the following flags are ignored by any version of BBEdit prior
-	//	to 8.6
-
-	kBBLMCanGenerateHTMLForPreview		=	0x00200000,
-	
-	//	the following flags are ignored by any version of BBEdit prior
-	//	to 8.7.1
-	
-	kBBLMCanSpellCheckCodeRuns			=	0x00400000,
-	
-	//	the following flags are ignored by any version of BBEdit prior
-	//	to 9.0
-	
-	kBBLMSupportsTextCompletion			=	0x00800000,
-	kBBLMSupportsPredefinedNameLookups	=	0x01000000,
-	
-} BBLMFeatureFlags;
 
 typedef	enum
 {
@@ -91,11 +28,23 @@ typedef	enum
 	kBBLMWarningCallout,	//	example: /* !!!:siegel: this looks wrong to me */
 	kBBLMNoteCallout,		//	example: /* NOTE: You should always check for NULL here */
 	
+	kBBLMURLInclude,
+	kBBLMSiteRelativeInclude,
+	
 	kBBLMLastUsedFunctionKind,	//	do not change or use this value; it should always
 								//	occur after the last factory defined value
 	kBBLMLastCoreFunctionKind = 31,
 	kBBLMReservedFunctionKind,		//	do not generate any function entries with this kind!
-	kBBLMFirstUserFunctionKind
+	kBBLMFirstUserFunctionKind,
+    
+    // moved from HTMLFunctionScanner because they were used in a switch statement, and LLVM 4 noticed they weren't "real" BBLMFunctionKinds
+    kHTMLFunctionJavascriptRun = 255,
+    kHTMLFunctionPHPRun = 254,
+    kHTMLFunctionCSSRun	= 253,
+    kHTMLFunctionJSPRun = 252,
+    kHTMLFunctionASPRun = 251,
+    kHTMLFunctionRubyRun = 250
+
 } BBLMFunctionKinds;
 
 typedef	enum
@@ -106,60 +55,51 @@ typedef	enum
 
 typedef	enum
 {
+	//
+	//	Beginning with BBEdit 9.2, these three bits are always set;
+	//	you should always generate entries for prototypes, includes,
+	//	and callouts when appropriate.
+	//
+	
 	kBBLMShowPrototypes		=	0x00000001,
-	kBBLMShowIncludes		=	0x00000002
+	kBBLMShowIncludes		=	0x00000002,
+	kBBLMShowCommentCallouts=	0x00000004
 } BBLMFcnOptionFlags;
 
-typedef enum
-{
-	kBBLMRunIsCode,
-	kBBLMRunIsPreprocessor,
-	kBBLMRunIsPostPreprocessor,
-	kBBLMRunIsBlockComment,
-	kBBLMRunIsLineComment,
-	kBBLMRunIsSingleString,
-	kBBLMRunIsDoubleString,
-	kBBLMRunIsEmbeddedLanguageStart,	// zero-length runs, marking start or end
-	kBBLMRunIsEmbeddedLanguageEnd,		// of languages, such as javascript in html
-	
-	//
-	//	all run values between 0 and kBBLMLastCoreRunKind are reserved for use by
-	//	the host application. Run values between kBBLMFirstUserRunKind and
-	//	kBBLMLastUserRunKind are reserved for use by language modules.
-	//
-	
-	kBBLMLastCoreRunKind	= 0x00FF,
-	kBBLMFirstUserRunKind	= 0x0100,
-	kBBLMLastUserRunKind	= 0x7FFE,
-	
-	kBBLMLastRunKind
-} BBLMRunKind;
+//
+//    You are encouraged to generate runs with these run kinds wherever
+//    possible. Do *not* add your own run kinds that begin with
+//    "com.barebones"; instead, use your own reverse-domain-name space
+//    (starting with your bundle ID) for your custom run kinds. The
+//    language module documentation contains complete information.
+//
 
-typedef	SInt16	BBLMRunCode;
-
-enum
-{
-	kBBLMTextColor,
-	kBBLMTextColorNoKeywords,
-	kBBLMKeywordColor,
-	kBBLMCommentColor,
-	kBBLMStringColor,
-	kBBLMSGMLTagColor,
-	kBBLMSGMLAnchorTagColor,			//	yucky legacy special case
-	kBBLMSGMLImageTagColor,				//	ditto
-	kBBLMSGMLAttributeNameColor,
-	kBBLMSGMLAttributeValueColor,
-	kBBLMXMLProcessingInstructionColor,
-	kBBLMCTagsKeywordColor,
-	kBBLMNumberColor,
-	kBBLMPredefinedNameColor,
-	
-	kBBLMLastCoreColorCode	=	0x00FF,
-	kBBLMFirstUserColorCode	=	0x0100,
-	kBBLMLastUserColorCode	=	0x7FFE,
-	
-	kBBLMLastColorCode
-};
+#define	kBBLMCodeRunKind					@"com.barebones.bblm.code"
+#define	kBBLMPreprocessorRunKind			@"com.barebones.bblm.preprocessor"
+#define	kBBLMPostPreprocessorRunKind		@"com.barebones.bblm.postpreprocessor"
+#define	kBBLMCommentRunKind					@"com.barebones.bblm.comment"			//	use for languages that don't distinguish between...
+#define	kBBLMLineCommentRunKind				@"com.barebones.bblm.line-comment"		//		...a "rest of line" comment, e.g. "//" in C or "#" in Ruby
+#define	kBBLMBlockCommentRunKind			@"com.barebones.bblm.block-comment"		//		...a begin/end delimited comment, e.g. /*...*/ in C
+#define	kBBLMStringRunKind					@"com.barebones.bblm.string"			//	use for languages that don't distinguish between...
+#define	kBBLMSingleQuotedStringRunKind		@"com.barebones.bblm.single-string"		//		...a single-quoted string, e.g. 'a' in C
+#define	kBBLMDoubleQuotedStringRunKind		@"com.barebones.bblm.double-string"		//		...a double-quoted string, e.g. "hello world" in C
+#define	kBBLMHereDocStringRunKind			@"com.barebones.bblm.heredoc-string"	//		...a "here doc" string as used in many scripting languages
+#define	kBBLMNumberRunKind					@"com.barebones.bblm.number"
+#define	kBBLMFileIncludeRunKind				@"com.barebones.bblm.file-include"
+#define	kBBLMVariableRunKind				@"com.barebones.bblm.variable"
+#define	kBBLMKeywordRunKind					@"com.barebones.bblm.keyword"
+#define	kBBLMPredefinedSymbolRunKind		@"com.barebones.bblm.predefined-symbol"
+#define	kBBLMIndexedSymbolRunKind			@"com.barebones.bblm.indexed-symbol"
+#define	kBBLMSGMLPCDATARunKind				@"com.barebones.bblm.sgml-pcdata"		//	SGML parsed character data (i.e. things not in tags)
+#define	kBBLMSGMLEntityRunKind				@"com.barebones.bblm.sgml-entity"		//	an SGML/HTML/XML entity (named or numeric)
+#define	kBBLMSGMLDeclarationRunKind			@"com.barebones.bblm.sgml-decl"			//	<! ... > (not including comments)
+#define	kBBLMSGMLTagRunKind					@"com.barebones.bblm.sgml-tag"			//	singleton SGML/HTML tags, e.g. <br>
+#define	kBBLMSGMLOpenTagRunKind				@"com.barebones.bblm.sgml-open-tag"		//	openers such as <ul>
+#define	kBBLMSGMLCloseTagRunKind			@"com.barebones.bblm.sgml-close-tag"	//	closers for openers (e.g. </ul>)
+#define kBBLMXMLPIRunKind					@"com.barebones.bblm.xml-pi"			//	processing instructions: <?...>
+#define	kBBLMXMLEmptyTagRunKind				@"com.barebones.bblm.xml-empty"			//	empty XML tags e.g. <hr />
+#define	kBBLMEmbeddedLanguageStartRunKind	@"com.barebones.bblm.embedded-start"	// zero-length runs, marking start or end
+#define	kBBLMEmbeddedLanguageEndRunKind		@"com.barebones.bblm.embedded-end"		// of languages, such as javascript in html
 
 enum
 {
@@ -189,7 +129,6 @@ enum
 	kBBLMLastFoldKind			= 31
 };
 
-typedef	UInt16	BBLMColorCode;
 typedef	UInt32	BBLMFoldKind;
 
 typedef	SInt8	BBLMCategoryTable[256];
@@ -212,14 +151,7 @@ typedef	enum
 											
 	kBBLMAdjustEndMessage,					//	adjust offset to last character in text that needs to be redrawn
 	
-	kBBLMMapColorCodeToColorMessage,		//	map a user-defined run color to an actual color
-	
-	kBBLMMapRunKindToColorCodeMessage,		//	map a user-defined run code to a run color
-											//	(result may be user-defined)
-
 	kBBLMSetCategoriesMessage,				//	configure character categories
-	
-	kBBLMMatchKeywordMessage,				//	manually match a language keyword
 	
 	kBBLMEscapeStringMessage,				//	escape a string
 		
@@ -233,9 +165,7 @@ typedef	enum
 											//	for folding purposes
 
 	kBBLMCanSpellCheckRunMessage,			//	return whether the given run of text can be spell checked
-	
-	kBBLMMatchKeywordWithCFStringMessage,	//	like kBBLMMatchKeywordMessage, but passes a CFStringRef to the keyword
-	
+
 	kBBLMScanSubrangeForFunctionsMessage,	//	like kBBLMScanForFunctionsMessage, but takes a range of text
 											//	to scan rather than requiring examination of the whole file
 
@@ -275,12 +205,20 @@ typedef	enum
 											//	be sent to ask the module to return an array of possible
 											//	completions
 
-	kBBLMMatchPredefinedNameMessage,		//	kBBLMMatchKeywordWithCFStringMessage but for predefined names
+	kBBLMResolveIncludeFileMessage,			//	kBBLMCanResolveIncludeFiles is set, this message will be
+											//	sent to ask the module to return a URL to the included
+											//	file on disk (or elsewhere)
+	
+	kBBLMRunKindForWordMessage,				//	If the module has BBLMSupportsWordLookup = YES, this
+											//	message will be sent to ask the module for the run kind
+											//	corresponding to a particular word. (This replaces
+											//	kBBLMMatchKeywordWithCFStringMessage and 
+											//	kBBLMMatchPredefinedNameMessage from the old API.)
 											
 	kBBLMLastMessage
 } BBLMMessage;
 
-#pragma options align=mac68k
+#pragma pack(push, 2)
 
 //	BBLMProcInfo - generated and used by the function scanner
 
@@ -307,8 +245,8 @@ typedef	struct BBLMProcInfo
 
 typedef struct
 {
-	DescType	language;
-	SInt16		kind;
+	OSType		language;
+	NSString	*runKind /* this value is neither retained nor released */;
 	SInt32		startPos;
 	SInt32		length;
 } BBLMRunRec;
@@ -322,7 +260,9 @@ typedef struct
 //	begin with your language module's bundle identifier to eliminate the possibility of
 //	conflicts. (Using your bundle ID will also make future UI enhancements possible.)
 //	Use kBBLMSymbolTypeGenericIdentifier if all else fails.
+#define		kBBLMSymbolTypeCallout				CFSTR("com.barebones.bblm.callout")
 #define		kBBLMSymbolTypeClass				CFSTR("com.barebones.bblm.class")
+#define		kBBLMSymbolTypeCSSPropertyName		CFSTR("com.barebones.bblm.cssPropertyName")
 #define		kBBLMSymbolTypeEnumerationName		CFSTR("com.barebones.bblm.enumName")
 #define		kBBLMSymbolTypeEnumerationValue		CFSTR("com.barebones.bblm.enumValue")
 #define		kBBLMSymbolTypeExternVariable		CFSTR("com.barebones.bblm.externVar")
@@ -330,6 +270,7 @@ typedef struct
 #define		kBBLMSymbolTypeFunctionPrototype	CFSTR("com.barebones.bblm.prototype")
 #define		kBBLMSymbolTypeGenericIdentifier	CFSTR("com.barebones.bblm.identifier")
 #define		kBBLMSymbolTypeGlobalVariable		CFSTR("com.barebones.bblm.globalVar")
+#define		kBBLMSymbolTypeIncludeFile			CFSTR("com.barebones.bblm.includeFile")
 #define		kBBLMSymbolTypeIVar					CFSTR("com.barebones.bblm.ivar")
 #define		kBBLMSymbolTypeLanguageKeyword		CFSTR("com.barebones.bblm.keyword")
 #define		kBBLMSymbolTypeLocalVariable		CFSTR("com.barebones.bblm.localVar")
@@ -358,6 +299,11 @@ typedef struct
 																		//	the character offset in the text of where this symbol
 																		//	was found.
 
+#define	kBBLMSymbolCompletionAutoIndent			CFSTR("AutoIndentCompletionText")
+																		//	CFBooleanRef; Optional: if present and YES, indicates
+																		//	that the completion text is multi-line and should be
+																		//	auto-indented to match the surrounding document content.
+																		
 //	Flag values for bblmCreateSymbolArrayParams.fOutAdditionalLookupFlags
 enum
 {
@@ -369,6 +315,7 @@ enum
 	kBBLMSymbolLookupClippings			=	0x00000008,
 	kBBLMSymbolLookupWordsInFrontWindow	=	0x00000010,
 	kBBLMSymbolLookupWordsInSystemDict	=	0x00000020,
+	kBBLMSymbolLookupTagMaker			=	0x00000040,
 	
 	kBBLMSymbolLookupEverywherePossible	=	0xFFFFFFFF
 };
@@ -379,8 +326,8 @@ enum
 
 typedef	struct
 {
-	UInt32	fTokenBuffer;					//	token buffer for callbacks
-	UInt32	fFcnList;						//	function list for callbacks
+	void	*fTokenBuffer;					//	token buffer for callbacks
+	void	*fFcnList;						//	function list for callbacks
 	
 	UInt32	fOptionFlags;					//	option flags (see BBLMFcnOptionFlags)
 } bblmFcnParams;
@@ -390,8 +337,8 @@ typedef	struct
 	UInt32	fScanStart;						//	where to start scanning (relative to fText)
 	UInt32	fScanEnd;						//	where to stop scanning (relative to fText)
 	
-	UInt32	fTokenBuffer;					//	token buffer for callbacks
-	UInt32	fFcnList;						//	function list for callbacks
+	void	*fTokenBuffer;					//	token buffer for callbacks
+	void	*fFcnList;						//	function list for callbacks
 	
 	UInt32	fOptionFlags;					//	option flags (see BBLMFcnOptionFlags)
 } bblmScanSubrangeForFcnParams;
@@ -437,20 +384,6 @@ bblmAdjustEndParams;
 
 typedef	struct
 {
-	SInt16		fColorCode;
-	RGBColor	fRGBColor;
-	Boolean		fMapped;
-} bblmMapColorParams;
-
-typedef	struct
-{
-	SInt16		fRunKind;
-	SInt16		fColorCode;
-	Boolean		fMapped;
-} bblmMapRunParams;
-
-typedef	struct
-{
 	BBLMCategoryTable	fCategoryTable;
 } bblmCategoryParams;
 
@@ -463,22 +396,15 @@ typedef	struct
 
 typedef	struct
 {
-	CFStringRef	fToken;
-	Boolean		fKeywordMatched;
-} bblmKeywordCFStringParams;
+	NSString	*fToken;		//	guaranteed to be non-NIL and non-empty
+	NSString	*fRunKind;		//	return NIL if there is no match
+} bblmWordLookupParams;
 
 typedef	struct
 {
 	UInt8		*fOutputString;
 	UInt8		fOutputStringSize;
 } bblmEscCharParams;
-
-typedef	struct
-{
-	SInt16		fColorCode;
-	Style		fStyle;
-	Boolean		fMapped;
-} bblmMapStyleParams;
 
 typedef struct
 {
@@ -497,7 +423,7 @@ typedef	struct
 typedef struct
 {
 	UInt32			fRunLanguage;
-	UInt16			fRunKind;
+	NSString		*fRunKind;
 	UInt32			fRunStart;
 	UInt32			fRunLength;
 	Boolean			fRunCanBeSpellChecked;
@@ -530,8 +456,17 @@ typedef struct
 	bool			fOutCanCompleteTokensInRun;
 } bblmFilterCompletionRunParams;
 
+typedef struct
+{
+	CFURLRef		fInDocumentURL;				//	may be NULL
+	CFStringRef		fInIncludeFileString;
+	CFURLRef		fOutIncludedItemURL;
+} bblmResolveIncludeParams;
+
 #define	kBBLMParamBlockSignature	'R*ch'		//	parameter block signature
-#define	kBBLMParamBlockVersion		6			//	current parameter block version
+#define	kBBLMParamBlockVersion		8			//	current parameter block version
+
+class	CTextStorage;
 
 typedef	struct
 {
@@ -542,10 +477,8 @@ typedef	struct
 	UInt8					fMessage;			//	input message (see BBLMMessage)
 	UInt32					fLanguage;			//	language code
 	
-	void					*fText;				//	pointer to text to be scanned
+	UniChar					*fText;				//	pointer to text to be scanned
 	UInt32					fTextLength;		//	length of text to be scanned
-	Boolean					fTextIsUnicode;		//	indicates whether text is Unicode
-	ScriptCode				fTextScript;		//	only applies if fTextIsUnicode
 	UInt32					fTextGapLocation;	//	location of "gap" in text (zero if text is contiguous)
 	UInt32					fTextGapLength;		//	length of text gap (zero if text is contiguous)
 	
@@ -555,25 +488,24 @@ typedef	struct
 		bblmAdjustRangeParams			fAdjustRangeParams;
 		bblmCalcRunParams				fCalcRunParams;
 		bblmAdjustEndParams				fAdjustEndParams;
-		bblmMapColorParams				fMapColorParams;
-		bblmMapRunParams				fMapRunParams;
 		bblmCategoryParams				fCategoryParams;
 		bblmKeywordParams				fMatchKeywordParams;
 		bblmEscCharParams				fEscapeCharParams;
-		bblmMapStyleParams				fMapStyleParams;
 		bblmGuessLanguageParams			fGuessLanguageParams;
 		bblmWordLeftRightStringParams	fWordLeftRightStringParams;
 		bblmCanSpellCheckRunParams		fCanSpellCheckRunParams;
-		bblmKeywordCFStringParams		fMatchKeywordWithCFStringParams;
+		bblmWordLookupParams			fWordLookupParams;
 		bblmScanSubrangeForFcnParams	fScanSubrangeForFcnParams;
 		bblmCreateLanguageDictParams	fCreateLanguageDictParams;
 		bblmFindLanguageEndParams		fFindLanguageEndParams;
 		bblmAdjustCompletionRangeParams	fAdjustCompletionRangeParams;
 		bblmFilterCompletionRunParams	fFilterCompletionRunParams;
 		bblmCreateCompletionArrayParams	fCreateCompletionArrayParams;
+		bblmResolveIncludeParams		fResolveIncludeParams;
 	};
 	
-	UInt32					reserved[64];		//	reserved for future expansion
+	UInt32					reserved[63];			//	reserved for future expansion
+	CTextStorage			*fPrivateTextStorage;	//	used internally
 } BBLMParamBlock;
 
 typedef	struct
@@ -594,8 +526,8 @@ typedef	struct
 		//	are just for convenience.
 		//
 		
-		OSErr		(*fResetTokenBuffer)(UInt32 tokenBuffer);			// Available in callback version 1 and later
-		OSErr		(*fResetProcList)(UInt32 procList);					// Available in callback version 1 and later
+		OSErr		(*fResetTokenBuffer)(void *tokenBuffer);			// Available in callback version 1 and later
+		OSErr		(*fResetProcList)(void *procList);					// Available in callback version 1 and later
 		
 		//
 		//	these callbacks are used in tandem to add a function to the list. When
@@ -607,27 +539,26 @@ typedef	struct
 		//	index obtained from a previous fAddFunctionToList() call.
 		//
 		
-		OSErr		(*fAddTokenToBuffer)(UInt32 tokenBuffer,			//	-> token buffer instance passed in fFcnParams
-											void *id,					//	-> points to identifier text
-											UInt32 length,				//	-> length of identifier text (in characters)
-											bool is_unicode,			//	-> TRUE if identifier text is Unicode
+		OSErr		(*fAddTokenToBuffer)(void *tokenBuffer,				//	-> token buffer instance passed in fFcnParams
+											const UniChar *token,		//	-> points to identifier text (Unicode characters)
+											const UInt32 length,		//	-> length of identifier text (in characters)
 											UInt32 *offset);			//	<- offset at which token was inserted
 																		//
 																		// Available in callback version 1 and later
 											
-		OSErr		(*fAddFunctionToList)(UInt32 procList,				//	-> function list instance passed in fFcnParams
+		OSErr		(*fAddFunctionToList)(void *procList,				//	-> function list instance passed in fFcnParams
 											BBLMProcInfo &info,			//	-> function info record
 											UInt32 *index);				//	<- zero-based index of this function's entry
 																		//
 																		// Available in callback version 1 and later
 		
-		OSErr		(*fGetFunctionEntry)(UInt32 procList,				//	-> function list instance passed in fFcnParams
+		OSErr		(*fGetFunctionEntry)(void *procList,				//	-> function list instance passed in fFcnParams
 											UInt32 index,				//	-> zero-based index of function entry to fetch
 											BBLMProcInfo &new_info);	//	<- function info record from list
 																		//
 																		// Available in callback version 1 and later
 											
-		OSErr		(*fUpdateFunctionEntry)(UInt32 procList,			//	-> function list instance passed in fFcnParams
+		OSErr		(*fUpdateFunctionEntry)(void *procList,				//	-> function list instance passed in fFcnParams
 											UInt32 index,				//	-> zero-based index of function entry to change
 											BBLMProcInfo &new_info);	//	-> function info record containing new information
 																		//
@@ -645,16 +576,16 @@ typedef	struct
 	
 	Boolean		(*fGetRun)(	SInt32 index,					//	get a run
 							DescType& language,				//	language code
-							BBLMRunCode& kind,				//	run kind (see enumeration above BBLMRunCode)
+							NSString* &kind,				//	run kind
 							SInt32& charPos,				//	character position of run start
 							SInt32& length);				//	number of characters in run
 	
 	SInt32		(*fFindRun)( SInt32 offset );				//	find run containing char offset
 															//	returns -1 if not found
 				
-	Boolean		(*fAddRun)(									//	add a new run. return false if no more runs needed
+	Boolean		(*fAddRun)(									//	add a new run. returns false if no more runs needed
 							DescType language,				//	language code
-							BBLMRunCode kind,				//	run kind (see enumeration above BBLMRunCode)
+							NSString* kind,					//	run kind
 							SInt32 startPos,				//	character position of run start
 							SInt32 length,					//	number of characters in run
 							bool dontMerge);				//	when updating a run list, don't return false
@@ -668,7 +599,7 @@ typedef	struct
 
 	//	this callback is used when messages == kBBLMScanForFunctionsMessage
 	
-	OSErr		(*fAddCFStringTokenToBuffer)(UInt32 tokenBuffer,	//	-> token buffer instance passed in fFcnParams
+	OSErr		(*fAddCFStringTokenToBuffer)(void *tokenBuffer,	//	-> token buffer instance passed in fFcnParams
 											 CFStringRef string,	//	-> string used for identifier text
 											 UInt32 *offset);		//	<- offset at which token was inserted
 																	//
@@ -710,7 +641,7 @@ typedef	struct
 
 } BBLMCallbackBlock;
 
-#pragma options align=reset
+#pragma pack(pop)
 
 #pragma mark -
 
@@ -720,32 +651,34 @@ typedef	struct
 
 #pragma mark Function Scanner Callbacks
 
-inline	OSErr	bblmResetTokenBuffer(const BBLMCallbackBlock *callbacks, UInt32 tokenBuffer)
+inline	OSErr	bblmResetTokenBuffer(const BBLMCallbackBlock *callbacks, void *tokenBuffer)
 					{ return callbacks->fResetTokenBuffer(tokenBuffer); }
 
-inline	OSErr	bblmResetProcList(const BBLMCallbackBlock *callbacks, UInt32 procList)
+inline	OSErr	bblmResetProcList(const BBLMCallbackBlock *callbacks, void *procList)
 					{ return callbacks->fResetProcList(procList); }
 
 inline	OSErr	bblmAddTokenToBuffer(const BBLMCallbackBlock *callbacks,
-										UInt32 tokenBuffer,
-										void *id,
-										UInt32 length,
-										bool is_unicode,
+										void *tokenBuffer,
+										const UniChar *token,
+										const UInt32 length,
 										UInt32 *offset)
 {
-	return callbacks->fAddTokenToBuffer(tokenBuffer, id, length, is_unicode, offset);
+	return callbacks->fAddTokenToBuffer(tokenBuffer, token, length, offset);
 }
 
 inline	OSErr	bblmAddCFStringTokenToBuffer(const BBLMCallbackBlock *callbacks,
-											 UInt32 tokenBuffer,
+											 void *tokenBuffer,
 											 CFStringRef string,
 											 UInt32 *offset)
 {
-	return (kBBLMCurrentCallbackVersion >= 3 ? callbacks->fAddCFStringTokenToBuffer(tokenBuffer, string, offset) : paramErr);
+	if (kBBLMCurrentCallbackVersion >= 3)
+		return callbacks->fAddCFStringTokenToBuffer(tokenBuffer, string, offset);
+	
+	return paramErr;
 }
 
 inline	OSErr	bblmAddFunctionToList(const BBLMCallbackBlock *callbacks,
-										UInt32 procList,
+										void *procList,
 										BBLMProcInfo &info,
 										UInt32 *index)
 {
@@ -753,7 +686,7 @@ inline	OSErr	bblmAddFunctionToList(const BBLMCallbackBlock *callbacks,
 }
 
 inline	OSErr	bblmGetFunctionEntry(const BBLMCallbackBlock *callbacks,
-										UInt32 procList,
+										void *procList,
 										UInt32 index,
 										BBLMProcInfo &info)
 {
@@ -761,7 +694,7 @@ inline	OSErr	bblmGetFunctionEntry(const BBLMCallbackBlock *callbacks,
 }
 
 inline	OSErr	bblmUpdateFunctionEntry(const BBLMCallbackBlock *callbacks,
-										UInt32 procList,
+										void *procList,
 										UInt32 index,
 										BBLMProcInfo &new_info)
 {
@@ -780,7 +713,7 @@ inline	SInt32		bblmRunCount(const BBLMCallbackBlock *callbacks)
 inline	bool		bblmGetRun(const BBLMCallbackBlock *callbacks,
 								SInt32 index,
 								DescType& language,
-								BBLMRunCode& kind,
+								NSString* &kind,
 								SInt32& charPos,
 								SInt32& length)
 {
@@ -795,7 +728,7 @@ inline	SInt32		bblmFindRun(const BBLMCallbackBlock *callbacks,
 
 inline	bool		bblmAddRun(const BBLMCallbackBlock *callbacks,
 								DescType language,
-								BBLMRunCode	kind,
+								NSString *kind,
 								SInt32 charPos,
 								SInt32 length,
 								bool dontMerge = false)
@@ -857,7 +790,7 @@ inline	OSErr		bblmFindEmbeddedLanguageFunctionsInRange(const BBLMCallbackBlock *
 
 #else
 
-#error	"Sorry, callback macro support for C is incomplete. Please try again later."
+#error	"Sorry, there is no callback macro support for C."
 
 #endif
 

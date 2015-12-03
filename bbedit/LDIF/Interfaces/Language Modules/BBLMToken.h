@@ -17,8 +17,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <Carbon/Carbon.h>
-
 #include "BBLMTextIterator.h"
 
 class BBLMToken
