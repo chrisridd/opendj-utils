@@ -23,6 +23,10 @@ into ~/Library/Application Support/BBEdit/Language Modules/ (or
 ~/Library/Application Support/TextWrangler/Language Modules/). Remove LDIF.plist
 if you've installed it first and restart BBEdit/TextWrangler.
 
+If you don't want to build it yourself, a pre-built binary is in the
+LDIF.bblm.zip file. Unzip it into the correct Language Modules directory in the
+previous paragraph.
+
 This version understands wrapped lines, and does some smarter keyword colouring.
 It will decode any base64-encoded DNs before putting them in the function list.
 
