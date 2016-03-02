@@ -1,30 +1,27 @@
 //
-//  LDIF.cp
+//  LDIF.mm
 //  LDIF
 //
 //  Created by Chris on 06/07/2014.
 //  Copyright (c) 2014 Chris Ridd. All rights reserved.
 //
 
-#include <Carbon/Carbon.h>
-#include <CoreFoundation/CoreFoundation.h>
+#import <Foundation/Foundation.h>
+
+#include <string.h>
 
 #include "BBLMInterface.h"
-#include "BBXTInterface.h"
 #include "BBLMTextIterator.h"
 
 // Custom colour runs
-enum {
-    kLDIFBBLMType = kBBLMFirstUserRunKind,
-    kLDIFBBLMValue,
-    kLDIFBBLMDash,
-    kLDIFBBLMSeparator,
-    kLDIFBBLMName
-};
+#define kLDIFBBLMType       @"com.barebones.bblm.html.attribute-name" /* Not documented */
+#define kLDIFBBLMValue      @"com.barebones.bblm.html.attribute-value" /* Not documented */
+#define kLDIFBBLMDash       @"com.example.ldif.dash"
+#define kLDIFBBLMSeparator  @"com.example.ldif.separator"
+#define kLDIFBBLMName       @"com.barebones.bblm.identifier" /* Not documented */
 
 extern "C" OSErr LDIF(BBLMParamBlock &params,
-                      const BBLMCallbackBlock &bblm_callbacks,
-                      const BBXTCallbackBlock &bbxt_callbacks);
+                      const BBLMCallbackBlock &bblm_callbacks);
 
 Boolean IsNewline(UniChar c)
 {
@@ -263,14 +260,14 @@ void ScanForRuns(BBLMParamBlock &params,
         start = pos;
         if (IsNewline(text[pos]) == true) {
             EatNewline(params, &pos);
-            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMRunIsCode, start, pos - start) == false) {
+            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMCodeRunKind, start, pos - start) == false) {
                 return;
             }
             continue;
         }
         if (text[pos] == '#') {
             SkipLine(params, &pos);
-            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMRunIsLineComment, start, pos - start) == false) {
+            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMLineCommentRunKind, start, pos - start) == false) {
                 return;
             }
             continue;
@@ -290,7 +287,7 @@ void ScanForRuns(BBLMParamBlock &params,
         if (Match(params, "dn", start) == true ||
             Match(params, "newrdn", start) == true ||
             Match(params, "newsuperior", start) == true) {
-            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMRunIsCode, start, separator - start) == false) {
+            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMCodeRunKind, start, separator - start) == false) {
                 return;
             }
             if (bblmAddRun(&bblm_callbacks, params.fLanguage, kLDIFBBLMSeparator, separator, value - separator) == false) {
@@ -306,7 +303,7 @@ void ScanForRuns(BBLMParamBlock &params,
 
         // version: .
         if (Match(params, "version", start) == true) {
-            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMRunIsCode, start, separator - start) == false) {
+            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMCodeRunKind, start, separator - start) == false) {
                 return;
             }
             if (bblmAddRun(&bblm_callbacks, params.fLanguage, kLDIFBBLMSeparator, separator, value - separator) == false) {
@@ -324,7 +321,7 @@ void ScanForRuns(BBLMParamBlock &params,
         // deleteoldrdn: true/false
         if (Match(params, "changetype", start) == true ||
             Match(params, "deleteoldrdn", start) == true) {
-            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMRunIsCode, start, separator - start) == false) {
+            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMCodeRunKind, start, separator - start) == false) {
                 return;
             }
             if (bblmAddRun(&bblm_callbacks, params.fLanguage, kLDIFBBLMSeparator, separator, value - separator) == false) {
@@ -332,7 +329,7 @@ void ScanForRuns(BBLMParamBlock &params,
             }
             pos = value;
             SkipLine(params, &pos);
-            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMRunIsCode, value, pos - value) == false) {
+            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMCodeRunKind, value, pos - value) == false) {
                 return;
             }
             continue;
@@ -343,7 +340,7 @@ void ScanForRuns(BBLMParamBlock &params,
             Match(params, "delete", start) == true ||
             Match(params, "replace", start) == true ||
             Match(params, "increment", start) == true) {
-            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMRunIsCode, start, separator - start) == false) {
+            if (bblmAddRun(&bblm_callbacks, params.fLanguage, kBBLMCodeRunKind, start, separator - start) == false) {
                 return;
             }
             if (bblmAddRun(&bblm_callbacks, params.fLanguage, kLDIFBBLMSeparator, separator, value - separator) == false) {
@@ -395,37 +392,8 @@ void AdjustRuns(BBLMParamBlock &params,
     params.fAdjustRangeParams.fEndIndex = pos;
 }
 
-void MapRunKind(BBLMParamBlock &params)
-{
-    switch (params.fMapRunParams.fRunKind) {
-        case kLDIFBBLMType:
-            params.fMapRunParams.fColorCode = kBBLMSGMLAttributeNameColor;
-            params.fMapRunParams.fMapped = true;
-            break;
-        case kLDIFBBLMValue:
-            params.fMapRunParams.fColorCode = kBBLMTextColorNoKeywords;
-            params.fMapRunParams.fMapped = true;
-            break;
-        case kLDIFBBLMDash:
-            params.fMapRunParams.fColorCode = kBBLMKeywordColor;
-            params.fMapRunParams.fMapped = true;
-            break;
-        case kLDIFBBLMSeparator:
-            params.fMapRunParams.fColorCode = kBBLMTextColorNoKeywords;
-            params.fMapRunParams.fMapped = true;
-            break;
-        case kLDIFBBLMName:
-            params.fMapRunParams.fColorCode = kBBLMSGMLAnchorTagColor;
-            params.fMapRunParams.fMapped = true;
-            break;
-        default:
-            params.fMapRunParams.fMapped = false;
-    }
-}
-
 OSErr LDIF(BBLMParamBlock &params,
-           const BBLMCallbackBlock &bblm_callbacks,
-           const BBXTCallbackBlock &bbxt_callbacks)
+           const BBLMCallbackBlock &bblm_callbacks)
 {
     OSErr result = noErr;
 
@@ -451,10 +419,9 @@ OSErr LDIF(BBLMParamBlock &params,
             ScanForRuns(params, bblm_callbacks);
             result = noErr;
             break;
-
-        case kBBLMMapRunKindToColorCodeMessage:
-            MapRunKind(params);
-            result = noErr;
+        // kBBLMSetCategoriesMessage
+        // kBBLMGuessLanguageMessage
+        // kBBLMRunKindForWordMessage
     }
     return result;
 }

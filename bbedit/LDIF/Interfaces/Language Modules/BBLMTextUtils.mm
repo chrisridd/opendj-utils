@@ -24,7 +24,8 @@
  *  and may still have some non-generic stuff that needs to be either 
  *  refactored or moved to a subclass.
  */
-
+#import <Foundation/Foundation.h>
+#include <string.h>
 #include "BBLMTextUtils.h"
 
 #pragma mark Character Tests and Init
@@ -182,7 +183,7 @@ bool
 BBLMTextUtils::skipInlineWhitespace( SInt32 & ctChars, BBLMTextIterator & p ) {
 	ctChars = 0;
 	
-	while ( m_p.InBounds() )
+	while ( p.InBounds() )
 	{
 		UniChar c = p[ 0 ];
 		
@@ -199,6 +200,41 @@ BBLMTextUtils::skipInlineWhitespace( SInt32 & ctChars, BBLMTextIterator & p ) {
 		else
 			return true;
 	}
+	
+	return false;
+}
+
+bool
+BBLMTextUtils::skipInlineWhitespaceByIndex( BBLMTextIterator & p, SInt32 & index ) {
+	SInt32		ix = index,
+				start = p.Offset(),
+				limit = m_params.fTextLength;
+	UniChar		c;
+	
+	while ( start + ix < limit )
+	{
+		c = p[ ix ];
+		
+		if ( this->isInlineWhiteChar( c ) )
+			++ix;
+		else if ( '\\' == c )
+		{
+			if ( this->isInlineWhiteChar( p[ ix + 1 ] ) )
+				ix += 2;
+			else
+			{
+				index = ix;
+				return ( start + ix < limit );
+			}
+		}
+		else
+		{
+			index = ix;
+			return true;
+		}
+	}
+	
+	index = ix;
 	
 	return false;
 }
@@ -222,11 +258,6 @@ BBLMTextUtils::skipPreviousInlineWhitespace() {
 		else
 			break;
 	}
-}
-
-void
-BBLMTextUtils::skipPreviousInlineWhitespaceByIndex( SInt32 & index ) {
-	return this->skipPreviousInlineWhitespaceByIndex( m_p, index );
 }
 
 void
@@ -269,31 +300,32 @@ BBLMTextUtils::skipPreviousInlineWhitespaceByIndex( BBLMTextIterator & p, SInt32
 }
 
 bool
-BBLMTextUtils::skipLine() {
-	while ( m_p.InBounds() )
-	{
-		if ( this->isEOLChar( *m_p ) )
-		{
-			m_p++;
-			return true;
-		}
-		
-		m_p++;
-	}
+BBLMTextUtils::skipLine( BBLMTextIterator & p ) {
+	if ( ! this->skipToEOL( p ) )
+		return false;
 	
-	// only reach this line if m_p points at EOF
-	return false;
+	p++;
+	
+	return p.InBounds();
 }
 
 bool
-BBLMTextUtils::skipLineByIndex( SInt32 & index ) {
+BBLMTextUtils::skipToEOL( BBLMTextIterator & p ) {
+	while ( ! this->isEOLChar( *p ) )
+		p++;
+	
+	return p.InBounds();
+}
+
+bool
+BBLMTextUtils::skipLineByIndex( BBLMTextIterator & p, SInt32 & index ) {
 	SInt32		ix = index,
 				limit = m_params.fTextLength,
-				start = m_p.Offset();
+				start = p.Offset();
 	
 	while ( start + ix < limit )
 	{
-		if ( this->isEOLChar( m_p[ ix ] ) )
+		if ( this->isEOLChar( p[ ix ] ) )
 			break;
 		
 		++ix;
@@ -424,12 +456,12 @@ BBLMTextUtils::skipToCharSameLineByIndex( UniChar seeking, SInt32 & index ) {
 }
 
 bool
-BBLMTextUtils::skipGroupByIndexCountingLines( SInt32 & index, const UniChar breakChar, SInt32 & ctLines ) {
-	UniChar		startChar = m_p[ index ],
+BBLMTextUtils::skipGroupByIndexCountingLines( BBLMTextIterator & p, SInt32 & index, const UniChar breakChar, SInt32 & ctLines ) {
+	UniChar		startChar = p[ index ],
 				closeChar = startChar,
 				c;
 	SInt32		ix = index + 1,
-				max = (SInt32) m_params.fTextLength - m_p.Offset();
+				max = (SInt32) m_params.fTextLength - p.Offset();
 	
 	switch ( startChar )
 	{
@@ -451,7 +483,7 @@ BBLMTextUtils::skipGroupByIndexCountingLines( SInt32 & index, const UniChar brea
 	
 	for ( ; ix < max; ++ix )
 	{
-		c = m_p[ ix ];
+		c = p[ ix ];
 		
 		if ( ( c == closeChar ) || ( c == breakChar ) )
 			break;
@@ -472,7 +504,7 @@ BBLMTextUtils::skipGroupByIndexCountingLines( SInt32 & index, const UniChar brea
 			case '(':
 			case '[':
 				// not passing the original breakChar here because we're going to be nested in a subgroup
-				if ( ! this->skipGroupByIndexCountingLines( ix, 0, ctLines ) )
+				if ( ! this->skipGroupByIndexCountingLines( p, ix, 0, ctLines ) )
 					return false;
 				
 				break;
@@ -484,23 +516,54 @@ BBLMTextUtils::skipGroupByIndexCountingLines( SInt32 & index, const UniChar brea
 	
 	index = ix;
 	
-	return ( (bool)m_p[ ix ] );
+	return ( (bool)p[ ix ] );
 }
 
 bool
-BBLMTextUtils::skipHex() {
+BBLMTextUtils::skipOctal( BBLMTUNumberType & numberType ) {
+	if ( '0' != *m_p )
+		return true;
+	
 	SInt32		startIx = m_p.Offset();
 	
-	if ( ( *m_p == '0' ) && ( m_p[1] == 'x' ) )
+	while ( isdigit( *m_p ) )
+	{
+		if ( ( '9' == *m_p ) || ( '8' == *m_p ) )
+		{
+			m_p--;
+			
+			return skipFloat( numberType );
+		}
+		
+		m_p++;
+	}
+	
+	if ( ( '.' == *m_p ) || ( 'e' == *m_p ) || ( 'E' == *m_p ) )
+	{
+		m_p--;
+		
+		return this->skipFloat( numberType );
+	}
+	
+	if ( m_p.Offset() - startIx > 1 )
+		numberType = kBBLMTUOctal;
+	else
+		numberType = kBBLMTULong;
+	
+	return ( 0 != *m_p );
+}
+
+bool
+BBLMTextUtils::skipHex( BBLMTUNumberType & numberType ) {
+	SInt32		startIx = m_p.Offset();
+	
+	numberType = kBBLMTUHex;
+	
+	if ( ( *m_p == '0' ) && ( ( m_p[1] == 'x' ) || ( m_p[1] == 'X' ) ) )
 	{
 		m_p += 2;
 		
-		for ( UniChar c = *m_p;
-			  isByte( c ) &&
-			  ( ( c >= '0' && c <= '9' ) ||
-				( c >= 'a' && c <= 'f' ) ||
-				( c >= 'A' && c <= 'F' ) );
-			  m_p++, c = *m_p )
+		for ( UniChar c = *m_p; isHexChar( c ); m_p++, c = *m_p )
 		{ ; }
 		
 		if ( m_p.Offset() == startIx + 2 )  // no hex chars were found after the 0x
@@ -511,31 +574,97 @@ BBLMTextUtils::skipHex() {
 }
 
 bool
-BBLMTextUtils::skipFloat() {
+BBLMTextUtils::skipBinary( BBLMTUNumberType & numberType ) {
+	SInt32		startIx = m_p.Offset();
+	
+	numberType = kBBLMTUBinary;
+	
+	if ( ( *m_p == '0' ) && ( ( m_p[1] == 'b' ) || ( m_p[1] == 'B' ) ) )
+	{
+		m_p += 2;
+		
+		for ( UniChar c = *m_p; ( '0' == c ) || ( '1' == c ); m_p++, c = *m_p )
+		{ ; }
+		
+		if ( m_p.Offset() == startIx + 2 ) // no binary chars were found after the 0b
+			m_p -= 2;
+	}
+	
+	return ( 0 != *m_p );
+}
+
+bool
+BBLMTextUtils::skipFloat( BBLMTUNumberType & numberType ) {
+	numberType = kBBLMTULong;
+	
 	while ( isdigit( *m_p ) )
 		m_p++;
 	
 	if ( '.' == *m_p )
+	{
 		m_p++;
+		
+		numberType = kBBLMTUFloat;
+	}
 	
 	while ( isdigit( *m_p ) )
 		m_p++;
 	
 	if ( ( 'e' == *m_p ) || ( 'E' == *m_p ) )
+	{
 		m_p++;
-	
-	if ( ( '-' == *m_p ) || ( '+' == *m_p ) )
-		m_p++;
+		
+		if ( ( '-' == *m_p ) || ( '+' == *m_p ) )
+			m_p++;
+		
+		if ( ! isdigit( *m_p ) )
+		{
+			m_p--;
+			
+			if ( ( '-' == *m_p ) || ( '+' == *m_p ) )
+				m_p--;
+			
+			return true;
+		}
+		
+		numberType = kBBLMTUScientific;
+	}
 	
 	while ( isdigit( *m_p ) )
 		m_p++;
 	
-	if ( ( 'F' == *m_p ) || ( 'f' == *m_p ) ||
-		 ( 'D' == *m_p ) || ( 'd' == *m_p ) )
-		m_p++;
-	
 	return ( 0 != *m_p );
 }
+
+bool
+BBLMTextUtils::skipNumber( BBLMTUNumberType & numberType ) {
+	if ( '0' == *m_p )
+	{
+		if ( ( 'x' == m_p[1] ) || ( 'X' == m_p[1] ) )
+		{
+			this->skipHex( numberType );
+		}
+		else if ( ( 'b' == m_p[1] ) || ( 'B' == m_p[1] ) )
+		{
+			this->skipBinary( numberType );
+		}
+		else if ( ( 'e' == m_p[1] ) || ( 'E' == m_p[1] ) )
+		{
+			this->skipFloat( numberType );
+		}
+		else
+		{
+			this->skipOctal( numberType );
+		}
+	}
+	else  // 1.2345e+3
+	{
+		this->skipFloat( numberType );
+	}
+	
+	return m_p.InBounds();
+}
+
 
 #pragma mark -
 #pragma mark Tests
@@ -551,6 +680,23 @@ BBLMTextUtils::matchChars( const char * pat ) {
 			return false;
 		
 		if ( m_p[ i ] != pat[ i ] )
+			return false;
+	}
+	
+	return true;
+}
+
+bool
+BBLMTextUtils::imatchChars( const char * pat ) {
+	SInt32			i = 0,
+					pos = m_p.Offset();
+	
+	for ( i = 0; pat[ i ]; ++i )
+	{
+		if ( pos + i >= (SInt32) m_params.fTextLength )
+			return false;
+		
+		if ( LowerChar( m_p[ i ] ) != LowerChar( pat[ i ] ) )
 			return false;
 	}
 	
@@ -587,3 +733,44 @@ BBLMTextUtils::rightTrimByIndex( SInt32 leftIndex, SInt32 rightSide ) {
 	
 	return lastReturn;
 }
+
+bool
+BBLMTextUtils::skipDelimitedStringByIndex( SInt32 & index, bool flAllowEOL,
+										   bool flAllowEscapes, bool flAllowEscapedEOL ) {
+	SInt32		ix = index + 1,
+				limit = m_params.fTextLength - m_p.Offset();
+	UniChar		c,
+				delim;
+	
+	if ( ix < limit )
+		delim = m_p[ index ];
+	else
+		return false;
+	
+	while ( ix < limit )
+	{
+		c = m_p[ ix ];
+		
+		if ( delim == c )
+			break;
+		else if ( ! flAllowEOL && this->isEOLChar( c ) )
+			break;
+		else if ( flAllowEscapes && ( '\\' == c ) )
+		{
+			if ( ! flAllowEscapedEOL && this->isEOLChar( m_p[ ix + 1 ] ) )
+				break;
+			
+			++ix;
+		}
+		
+		++ix;
+	}
+	
+	index = ix + ( ( ix < limit ) ? 1 : 0 );
+	
+	return index < limit;
+}
+
+
+
+

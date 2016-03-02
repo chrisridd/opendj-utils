@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>LDIF</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>BBLM</string>
+	<key>CFBundleVersion</key>
+	<string>8.0</string>
+	<key>CSResourcesFileMapped</key>
+	<true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2015-2016 Chris Ridd. All rights reserved.</string>
+	<key>com.barebones.bblminfo</key>
+	<array>
+		<dict>
+			<key>BBLMCanGuessLanguage</key>
+			<true/>
+            <key>BBLMColorsSyntax</key>
+            <true/>
+			<key>BBLMDroppedFilePathStyle</key>
+			<string>POSIX</string>
+			<key>BBLMIsCaseSensitive</key>
+			<false/>
+			<key>BBLMLanguageCode</key>
+			<string>LDIF</string>
+			<key>BBLMLanguageDisplayName</key>
+			<string>LDIF</string>
+            <key>BBLMLanguageDisplayName</key>
+            <string>LDAP Data Interchange Format</string>
+			<key>BBLMEntryPointName</key>
+			<string>LDIF</string>
+			<key>BBLMScansFunctions</key>
+			<true/>
+			<key>BBLMFunctionScannerDoesFoldsToo</key>
+			<true/>
+            <key>BBLMKeywordList</key>
+            <array>
+                <string>changetype</string>
+                <string>add</string>
+                <string>delete</string>
+                <string>replace</string>
+                <string>modify</string>
+                <string>increment</string>
+                <string>version</string>
+                <string>moddn</string>
+                <string>modrdn</string>
+                <string>newrdn</string>
+                <string>deleteoldrdn</string>
+                <string>newsuperior</string>
+                <string>dn</string>
+                <string>control</string>
+                <string>true</string>
+                <string>false</string>
+            </array>
+			<key>BBLMSuffixMap</key>
+			<array>
+				<dict>
+					<key>BBLMLanguageSuffix</key>
+					<string>.ldif</string>
+				</dict>
+			</array>
+			<key>BBLMUseHTMLFileSearchRules</key>
+			<false/>
+		</dict>
+	</array>
+</dict>
+</plist>

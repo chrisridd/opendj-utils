@@ -9,10 +9,25 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>Setext copy.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>Setext.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>0</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>67EF5945196968D900787F39</key>
+		<key>5F05133905A0957400BD0E76</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>67ED5E271C85FBAA0051CA0A</key>
 		<dict>
 			<key>primary</key>
 			<true/>
