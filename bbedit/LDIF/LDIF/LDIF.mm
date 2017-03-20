@@ -95,7 +95,7 @@ CFStringRef ReadWrappedLine(BBLMParamBlock &params, bool base64, UInt32 *ppos)
         pos++;
     }
     if (base64) {
-        CFDataRef output;
+        CFDataRef output = NULL;
         SecTransformRef transform = SecDecodeTransformCreate(kSecBase64Encoding, NULL);
         if (SecTransformSetAttribute(transform, kSecTransformInputAttributeName, data, NULL))
             output = (CFDataRef)SecTransformExecute(transform, NULL);
@@ -200,7 +200,7 @@ void ScanForFunctions(BBLMParamBlock &params,
             info.fKind = kBBLMFunctionMark;
             info.fFlags = 0;
             info.fNameStart = namePos;
-            info.fNameLength = CFStringGetLength(str);
+            info.fNameLength = (UInt32)CFStringGetLength(str);
             UInt32 index = 0;
             (void)bblmAddFunctionToList(&bblm_callbacks, params.fFcnParams.fFcnList, info, &index);
             (void)bblmAddFoldRange(&bblm_callbacks, foldStart, endPos - foldStart, kBBLMFunctionAutoFold);
