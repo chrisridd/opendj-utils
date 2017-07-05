@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-$::VERSION = 0.2;
+$::VERSION = 0.3;
 
 sub version()
 {
@@ -100,6 +100,7 @@ sub updatestats
 
 while (<>) {
 	chomp;
+	# JSON log format
 	if ($opt{'j'}) {
 		my $record = $opt{j}->decode($_);
 		next unless $record->{request}->{operation} eq $op;
@@ -108,14 +109,16 @@ while (<>) {
 		updatestats($etime, $_) if $opt{'s'};
 		next;
 	}
+	# Traditional log format
 	if (my ($tuple) = m{$op REQ.*(conn=-?\d+ op=\d+ msgID=\d+)}) {
 		$details{$tuple} = $_;
 		next;
 	}
-	if (my ($tuple,$remainder) = m{$op RES.*(conn=-?\d+ op=\d+ msgID=\d+)( +.*)}) {
+	# Traditional log format
+	if (my ($tuple,$remainder) = m{$op RES .*(conn=-?\d+ op=\d+ msgID=\d+)( +.*)}) {
 		if (exists $details{$tuple}) {
 			my $details = $details{$tuple};
-			delete $details{$tuple};
+			delete $details{$tuple}; 
 			my $etime = "";
 			$etime = $1 if $remainder =~ m{ etime=(\d+)};
 			if ($opt{'e'} != -1 && $etime >= $opt{'e'}) {
@@ -123,6 +126,17 @@ while (<>) {
 			}
 			updatestats($etime, $details) if $opt{'s'};
 		}
+		next;
+	}
+	# Combined log format
+	if (my ($tuple,$remainder) = m{$op .*(conn=-?\d+ op=\d+ msgID=\d+)( +.*)}) {
+		my $etime = "";
+		$etime = $1 if $remainder =~ m{ etime=(\d+)};
+		if ($opt{'e'} != -1 && $etime >= $opt{'e'}) {
+			print "$_\n";
+		}
+		updatestats($etime, $_) if $opt{'s'};
+		next;
 	}
 }
 
