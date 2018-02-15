@@ -21,30 +21,24 @@
 	<key>CSResourcesFileMapped</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2015-2016 Chris Ridd. All rights reserved.</string>
+	<string>Copyright © 2015-2018 Chris Ridd. All rights reserved.</string>
 	<key>com.barebones.bblminfo</key>
 	<array>
 		<dict>
-			<key>BBLMCommentLineDefault</key>
-			<string>#</string>
 			<key>BBLMCanGuessLanguage</key>
 			<true/>
 			<key>BBLMColorsSyntax</key>
 			<true/>
+			<key>BBLMCommentLineDefault</key>
+			<string>#</string>
 			<key>BBLMDroppedFilePathStyle</key>
 			<string>POSIX</string>
-			<key>BBLMIsCaseSensitive</key>
-			<false/>
-			<key>BBLMLanguageCode</key>
-			<string>LDIF</string>
-			<key>BBLMLanguageDisplayName</key>
-			<string>LDAP Data Interchange Format</string>
 			<key>BBLMEntryPointName</key>
 			<string>LDIF</string>
-			<key>BBLMScansFunctions</key>
-			<true/>
 			<key>BBLMFunctionScannerDoesFoldsToo</key>
 			<true/>
+			<key>BBLMIsCaseSensitive</key>
+			<false/>
 			<key>BBLMKeywordList</key>
 			<array>
 				<string>changetype</string>
@@ -64,6 +58,12 @@
 				<string>true</string>
 				<string>false</string>
 			</array>
+			<key>BBLMLanguageCode</key>
+			<string>LDIF</string>
+			<key>BBLMLanguageDisplayName</key>
+			<string>LDAP Data Interchange Format</string>
+			<key>BBLMScansFunctions</key>
+			<true/>
 			<key>BBLMSuffixMap</key>
 			<array>
 				<dict>
