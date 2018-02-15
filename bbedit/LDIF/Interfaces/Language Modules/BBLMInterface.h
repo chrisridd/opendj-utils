@@ -806,22 +806,26 @@ OSStatus	bblmAddFunctionToList(const BBLMCallbackBlock *callbacks,
 	OSStatus	err = noErr;
 	
 	//	basic parameter validation
-	require_action(nil != callbacks, EXIT, err = paramErr);
-	require_action(nil != tokenBuffer, EXIT, err = paramErr);
-	require_action(nil != procList, EXIT, err = paramErr);
-	require_action(nil != name, EXIT, err = paramErr);
-	
-	require_noerr(err = bblmAddCFStringTokenToBuffer(callbacks,
-														tokenBuffer,
-														name,
-														&info.fNameStart),
-					EXIT);
-	
-	require_noerr(err = bblmAddFunctionToList(callbacks,
-												procList,
-												info,
-												index),
-					EXIT);
+    if (nil == callbacks || nil == tokenBuffer || nil == procList || nil == name) {
+        err = paramErr;
+        goto EXIT;
+    }
+
+    err = bblmAddCFStringTokenToBuffer(callbacks,
+                                       tokenBuffer,
+                                       name,
+                                       &info.fNameStart);
+    if (err != noErr) {
+        goto EXIT;
+    }
+
+    err = bblmAddFunctionToList(callbacks,
+                                procList,
+                                info,
+                                index);
+    if (err != noErr) {
+        goto EXIT;
+    }
 	
 EXIT:
 	return err;

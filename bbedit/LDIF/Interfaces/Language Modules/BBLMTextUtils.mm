@@ -25,6 +25,9 @@
  *  refactored or moved to a subclass.
  */
 
+#import <Foundation/Foundation.h>
+#include <string.h>
+
 #include "BBLMTextUtils.h"
 
 #pragma mark Character Tests and Init
@@ -780,6 +783,10 @@ BBLMTextUtils::countLinesInRange( UInt32 rangeStart, UInt32 rangeStop, UInt32 ma
 
 #pragma mark -
 
+inline NSUInteger PIN(NSUInteger a, NSUInteger b) {
+    return (a < b) ? a : b;
+}
+
 SInt32
 BBLMTextUtils::copyCollapsedRangeToBuffer( SInt32 & rangeStart, SInt32 & rangeEnd, UniChar * buffer, NSUInteger maxLength ) {
 	BBLMTextIterator	p( m_p );
@@ -839,12 +846,16 @@ BBLMTextUtils::createCFStringFromOffsets( SInt32 & start, SInt32 & stop, SInt32 
 	UniChar		chars[kMaxStaticLength];
 	UniChar		*buffer = nil;
 	UniChar		*dst = chars;
-	
-	require( stop >= start, errorExitBadParameters );
-	
-	if (strLength > kMaxStaticLength)
+
+    if (stop < start) {
+        goto errorExitBadParameters;
+    }
+
+    if (strLength > kMaxStaticLength)
 	{
-		require(nil != (buffer = new UniChar[strLength]), errorExitAllocationFailed);
+        if (nil == (buffer = new UniChar[strLength])) {
+            goto errorExitAllocationFailed;
+        }
 		dst = buffer;
 	}
 	
@@ -852,8 +863,10 @@ BBLMTextUtils::createCFStringFromOffsets( SInt32 & start, SInt32 & stop, SInt32 
 	
 	//	make the string
 	str = CFStringCreateWithCharacters( kCFAllocatorDefault, dst, strLength );
-	
-	require( NULL != str, errorExitCFStringCreateFailed );
+
+    if (NULL == str) {
+        goto errorExitCFStringCreateFailed;
+    }
 
 errorExitAllocationFailed:
 errorExitBadParameters:
@@ -876,11 +889,10 @@ BBLMTextUtils::createCFStringFromOffsetsWithPrefix( SInt32 & start, SInt32 & sto
 		CFMutableStringRef	result = nil;
 		
 		result = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, prefix);
-		check(nil != result);
 		if (nil != result)
 			CFStringAppend(result, str);
 			
-		CFQRelease(str);
+		CFRelease(str);
 		
 		str = result;
 	}
