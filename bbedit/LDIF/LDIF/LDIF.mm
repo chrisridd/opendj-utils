@@ -6,8 +6,6 @@
 //  Copyright (c) 2014 Chris Ridd. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
-
 #include <string.h>
 
 #include "BBLMInterface.h"
