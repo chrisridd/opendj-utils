@@ -24,8 +24,7 @@
  *  and may still have some non-generic stuff that needs to be either 
  *  refactored or moved to a subclass.
  */
-#import <Foundation/Foundation.h>
-#include <string.h>
+
 #include "BBLMTextUtils.h"
 
 #pragma mark Character Tests and Init
@@ -89,52 +88,24 @@ BBLMTextUtils::isBreakChar( UniChar c ) {
 
 #pragma mark -
 
-void
-BBLMTextUtils::addInlineWhiteChar( UniChar c ) {
-	this->addCharToSet( c, m_inlineWhiteCharSet );
-}
-
-void
-BBLMTextUtils::addInlineWhiteChars( CFStringRef s ) {
-	this->addCharsToSet( s, m_inlineWhiteCharSet );
-}
-
-void
-BBLMTextUtils::clearInlineWhiteChar( UniChar c ) {
-	this->removeCharFromSet( c, m_inlineWhiteCharSet );
-}
-
-void
-BBLMTextUtils::clearInlineWhiteChars( CFStringRef s ) {
-	this->removeCharsFromSet( s, m_inlineWhiteCharSet );
-}
-
 bool
 BBLMTextUtils::isInlineWhiteChar( UniChar c ) {
 	return CFCharacterSetIsCharacterMember( m_inlineWhiteCharSet, c );
 }
 
+void
+BBLMTextUtils::initEOLChars() {
+	this->addCharsToSet(CFSTR( "\r\n" ), m_EOLCharSet);
+	this->addCharToSet(0x0085, m_EOLCharSet);	//	NEXT LINE (NEL)
+	this->addCharToSet(0, m_EOLCharSet);		//	null, for EOF cases
+}
+
+void
+BBLMTextUtils::initWhitespace() {
+	this->addCharsToSet(CFSTR( " \t\f\v" ), m_inlineWhiteCharSet);
+}
+
 #pragma mark -
-
-void
-BBLMTextUtils::addEOLChar( UniChar c ) {
-	this->addCharToSet( c, m_EOLCharSet );
-}
-
-void
-BBLMTextUtils::addEOLChars( CFStringRef s ) {
-	this->addCharsToSet( s, m_EOLCharSet );
-}
-
-void
-BBLMTextUtils::clearEOLChar( UniChar c ) {
-	this->removeCharFromSet( c, m_EOLCharSet );
-}
-
-void
-BBLMTextUtils::clearEOLChars( CFStringRef s ) {
-	this->removeCharsFromSet( s, m_EOLCharSet );
-}
 
 bool
 BBLMTextUtils::isEOLChar( UniChar c ) {
@@ -349,7 +320,7 @@ BBLMTextUtils::skipLineWithMaxIndexByIndex( SInt32 & index, SInt32 maxIndex ) {
 	
 	while ( ix < limit )
 	{
-		if ( '\r' == m_p[ ix ] )
+		if ( BBLMCharacterIsLineBreak(m_p[ ix ]) )
 		{
 			index = ix;
 			return true;
@@ -374,7 +345,7 @@ BBLMTextUtils::findLineEndBeforeIndex( SInt32 index ) {
 	
 	while ( ix >= 0 )
 	{
-		if ( '\r' == iter[ ix ] )
+		if ( BBLMCharacterIsLineBreak(iter[ ix ]) )
 			break;
 		
 		--ix;
@@ -393,7 +364,7 @@ BBLMTextUtils::findLineEndAfterIndex( SInt32 index ) {
 	
 	while ( ix < limit )
 	{
-		if ( '\r' == iter[ ix ] )
+		if ( BBLMCharacterIsLineBreak(iter[ ix ]) )
 			break;
 		
 		++ix;
@@ -444,9 +415,9 @@ BBLMTextUtils::skipToCharSameLineByIndex( UniChar seeking, SInt32 & index ) {
 			index = ix;
 			return true;
 		}
-		else if ( ( '\\' == c ) && ( pos + ix + 1 < limit ) && ( '\r' != m_p[ ix + 1 ] ) )
+		else if ( ( '\\' == c ) && ( pos + ix + 1 < limit ) && ( ! BBLMCharacterIsLineBreak(m_p[ ix + 1 ]) ) )
 			++ix;
-		else if ( '\r' == c )
+		else if ( BBLMCharacterIsLineBreak(c) )
 			return false;
 		
 		++ix;
@@ -491,6 +462,7 @@ BBLMTextUtils::skipGroupByIndexCountingLines( BBLMTextIterator & p, SInt32 & ind
 		switch ( c )
 		{
 			case '\r':
+			case '\n':
 				++ctLines;
 				
 				break;
@@ -674,12 +646,15 @@ BBLMTextUtils::matchChars( const char * pat ) {
 	SInt32				i,
 						pos = m_p.Offset();
 	
-	for ( i = 0; pat[ i ]; ++i )
+	for ( i = 0; *pat; ++i, pat++ )
 	{
 		if ( pos + i >= (SInt32) m_params.fTextLength )
 			return false;
 		
-		if ( m_p[ i ] != pat[ i ] )
+		if (BBLMCharacterIsLineBreak(m_p[i]) && BBLMCharacterIsLineBreak(*pat))
+			continue;
+			
+		if ( m_p[ i ] != *pat )
 			return false;
 	}
 	
@@ -691,12 +666,15 @@ BBLMTextUtils::imatchChars( const char * pat ) {
 	SInt32			i = 0,
 					pos = m_p.Offset();
 	
-	for ( i = 0; pat[ i ]; ++i )
+	for ( i = 0; *pat; ++i, pat++ )
 	{
 		if ( pos + i >= (SInt32) m_params.fTextLength )
 			return false;
 		
-		if ( LowerChar( m_p[ i ] ) != LowerChar( pat[ i ] ) )
+		if (BBLMCharacterIsLineBreak(m_p[i]) && BBLMCharacterIsLineBreak(*pat))
+			continue;
+			
+		if ( LowerChar( m_p[ i ] ) != LowerChar( *pat ) )
 			return false;
 	}
 	
@@ -771,6 +749,142 @@ BBLMTextUtils::skipDelimitedStringByIndex( SInt32 & index, bool flAllowEOL,
 	return index < limit;
 }
 
+UInt32
+BBLMTextUtils::countLinesInRange( UInt32 rangeStart, UInt32 rangeStop, UInt32 maxLinesToFind )
+{
+	if (rangeStop <= rangeStart)
+		return 0;
+		
+	UInt32				i = 0, length = rangeStop - rangeStart,
+						ctLines = 0;
+	BBLMTextIterator	p( m_params, rangeStart );
+	
+	while ( p.InBounds() && ( i < length ) )
+	{
+		if ( BBLMCharacterIsLineBreak(*p) )
+		{
+			ctLines++;
+		}
+		
+		if ( ctLines >= maxLinesToFind )
+		{
+			break;
+		}
+		
+		p++;
+		++i;
+	}
+	
+	return ctLines;
+}
 
+#pragma mark -
 
+SInt32
+BBLMTextUtils::copyCollapsedRangeToBuffer( SInt32 & rangeStart, SInt32 & rangeEnd, UniChar * buffer, NSUInteger maxLength ) {
+	BBLMTextIterator	p( m_p );
+	SInt32				j = 0;
+	const NSUInteger	strLength = PIN(static_cast<NSUInteger>(rangeEnd - rangeStart + 1), maxLength);
+	bool				flFirstChar = true,
+						flNeedSpace = false;
 
+	if ( rangeEnd < rangeStart )
+		return 0;
+	
+	p.SetOffset( rangeStart );
+	
+	for ( NSUInteger i = 0; i < strLength; i++, p++ )
+	{
+		const UniChar c = *p;
+		
+		if ( isspace( c ) )
+		{
+			if ( flFirstChar )
+			{
+				rangeStart++;
+				continue;
+			}
+			
+			flFirstChar = false;
+			flNeedSpace = true;
+			continue;
+		}
+		else if ( flNeedSpace )
+		{
+			buffer[ j++ ] = ' ';
+			flNeedSpace = false;
+		}
+		
+		flFirstChar = false;
+		buffer[ j++ ] = c;
+	}
+	
+	p--;
+	for ( SInt32 i = rangeEnd; i > rangeStart; i--, p-- )
+	{
+		if ( isspace( *p ) )
+			--rangeEnd;
+		else
+			break;
+	}
+	
+	return j;
+}
+
+CFStringRef
+BBLMTextUtils::createCFStringFromOffsets( SInt32 & start, SInt32 & stop, SInt32 maxLength ) {
+	enum		{ kMaxStaticLength = 256 };
+	CFStringRef	str = NULL;
+	SInt32		strLength = PIN((stop - start) + 1, maxLength);
+	UniChar		chars[kMaxStaticLength];
+	UniChar		*buffer = nil;
+	UniChar		*dst = chars;
+	
+	require( stop >= start, errorExitBadParameters );
+	
+	if (strLength > kMaxStaticLength)
+	{
+		require(nil != (buffer = new UniChar[strLength]), errorExitAllocationFailed);
+		dst = buffer;
+	}
+	
+	strLength = this->copyCollapsedRangeToBuffer( start, stop, dst, maxLength );
+	
+	//	make the string
+	str = CFStringCreateWithCharacters( kCFAllocatorDefault, dst, strLength );
+	
+	require( NULL != str, errorExitCFStringCreateFailed );
+
+errorExitAllocationFailed:
+errorExitBadParameters:
+errorExitCFStringCreateFailed:
+	
+	delete[] buffer;
+	
+	return str;
+}
+
+CFStringRef
+BBLMTextUtils::createCFStringFromOffsetsWithPrefix( SInt32 & start, SInt32 & stop, SInt32 maxLength, CFStringRef prefix ) {
+	CFStringRef			str = nil;
+
+	str = this->createCFStringFromOffsets(start, stop, maxLength);
+	if ((nil != str) &&
+		(nil != prefix) &&
+		(0 != CFStringGetLength(prefix)))
+	{
+		CFMutableStringRef	result = nil;
+		
+		result = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, prefix);
+		check(nil != result);
+		if (nil != result)
+			CFStringAppend(result, str);
+			
+		if (nil != str)
+			CFRelease(str);
+		
+		str = result;
+	}
+	
+	return str;
+}

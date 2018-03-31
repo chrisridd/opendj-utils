@@ -84,6 +84,10 @@ public:
 	void				reset() {
 		m_start = m_length = 0;
 	}
+	
+	NSRange				range() const {
+		return NSMakeRange( m_start, m_length );
+	}
 
 
 

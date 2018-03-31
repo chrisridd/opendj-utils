@@ -38,7 +38,6 @@
                         		( ( (c) >= 'a' ) && ( (c) <= 'f' ) ) ||				\
                         		( ( (c) >= 'A' ) && ( (c) <= 'F' ) ) ) )
 
-
 class BBLMTextUtils
 {
 
@@ -60,6 +59,9 @@ public:
 		m_breakCharSet = CFCharacterSetCreateMutable( kCFAllocatorDefault );
 		
 		m_EOLCharSet = CFCharacterSetCreateMutable( kCFAllocatorDefault );
+		
+		this->initEOLChars();
+		this->initWhitespace();
 	}
 	
 	virtual ~BBLMTextUtils()
@@ -183,13 +185,13 @@ public:
 			bool			skipDelimitedStringByIndex( SInt32 & /* index */, bool /* flAllowEOL */,
 							                            bool /* flAllowEscape */, bool /* flAllowEscapedEOL */ );
 			
-	virtual	SInt32			copyCollapsedRangeToBuffer( SInt32 &, SInt32 &, UniChar *, SInt32 ) = 0;
+			SInt32			copyCollapsedRangeToBuffer( SInt32 &, SInt32 &, UniChar *, NSUInteger );
 			
-	virtual	CFStringRef		createCFStringFromOffsets( SInt32 &, SInt32 &, SInt32 ) = 0;
+			CFStringRef		createCFStringFromOffsets( SInt32 &, SInt32 &, SInt32 );
 			
-	virtual	CFStringRef		createCFStringFromOffsetsWithPrefix( SInt32 &, SInt32 &, SInt32, const char * ) = 0;
+			CFStringRef		createCFStringFromOffsetsWithPrefix( SInt32 &, SInt32 &, SInt32, CFStringRef );
 			
-	virtual	UInt32			countLinesInRange( UInt32, UInt32, UInt32 ) = 0;
+			UInt32			countLinesInRange( UInt32 rangeStart, UInt32 rangeEnd, UInt32 maxLinesToFind);
 	
 	
 	typedef enum BBLMTUNumberType {
@@ -261,14 +263,6 @@ protected:
 	#pragma mark -
 	#pragma mark Character Tests
 	
-			void			addCharsToSet( CFStringRef, CFMutableCharacterSetRef );
-			
-			void			addCharToSet( UniChar, CFMutableCharacterSetRef );
-			
-			void			removeCharsFromSet( CFStringRef, CFMutableCharacterSetRef );
-			
-			void			removeCharFromSet( UniChar, CFMutableCharacterSetRef );
-	
 			void			addBreakChar( UniChar c );
 			
 			void			addBreakChars( CFStringRef );
@@ -276,40 +270,24 @@ protected:
 			void			clearBreakChar( UniChar );
 			
 			void			clearBreakChars( CFStringRef );
-			
-			void			setBreaks( CFStringRef, CFMutableCharacterSetRef );
-			
+						
 	virtual	void			initBreaks() = 0;
 			
+private:
+			void			addCharsToSet( CFStringRef, CFMutableCharacterSetRef );
+			void			addCharToSet( UniChar, CFMutableCharacterSetRef );
 			
-			void			addInlineWhiteChar( UniChar c );
-			
-			void			addInlineWhiteChars( CFStringRef );
-			
-			void			clearInlineWhiteChar( UniChar c );
-			
-			void			clearInlineWhiteChars( CFStringRef );
-			
-	virtual	void			initWhitespace() = 0;
+			void			removeCharsFromSet( CFStringRef, CFMutableCharacterSetRef );
+			void			removeCharFromSet( UniChar, CFMutableCharacterSetRef );
 	
-	
-			void			addEOLChar( UniChar );
-			
-			void			addEOLChars( CFStringRef );
-			
-			void			clearEOLChar( UniChar );
-			
-			void			clearEOLChars( CFStringRef );
-			
-	virtual	void			initEOLChars() = 0;
 
+			void			initWhitespace();
+			void			initEOLChars();
+			
 #pragma mark -
 #pragma mark private
 private:
 			
-#pragma mark FIXME
-// FIXME: make these globals, since they're actually specific to the YAML module,
-// not to invocations of the module
 			CFMutableCharacterSetRef	m_inlineWhiteCharSet;
 			
 			CFMutableCharacterSetRef	m_breakCharSet;
