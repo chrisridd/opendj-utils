@@ -22,18 +22,36 @@ if ($ARGV[0] eq "-z") {
 
 $zone = DateTime::TimeZone->new(name => defined($zone) ? $zone : 'local');
 
+sub ts2timestr($) {
+	my $ts_dec = shift;
+
+	my $time = DateTime->from_epoch( epoch => $ts_dec / 1000 ); # UTC
+	$time->set_time_zone($zone);
+	return $time->strftime("%a %b %e %Y %H:%M:%S.%3N %Z");
+}
+
 foreach (@ARGV) {
-	if (my($ts,$id,$no) = m{^(................)(....)(........)$}) {
+	my ($ts,$id,$no,$id_len);
+	if (($ts,$id,$no) = m{^0000(............)(....)(........)$}) {
+		# CSNs pre 6.5.0
 		my $ts_dec = hex($ts); # Value is 64-bits hence using bignum
 		my $id_dec = hex($id);
 		my $no_dec = hex($no);
-		my $time = DateTime->from_epoch( epoch => $ts_dec / 1000 ); # UTC
-		$time->set_time_zone($zone);
-		my $ts_str = $time->strftime("%a %b %e %Y %H:%M:%S.%3N %Z");
-		print "CSN $_\n  ts=$ts ($ts_dec) $ts_str\n  id=$id ($id_dec)\n  no=$no ($no_dec)\n";
-		next;
+		my $ts_str = ts2timestr $ts_dec;
+		print "CSNv1 $_\n  ts=$ts ($ts_dec) $ts_str\n  id=$id ($id_dec)\n  no=$no ($no_dec)\n";
+	} elsif (($id_len,$ts,$no,$id) = m{^01(..)(............)(........)(.*)}) {
+		# CSNs from 6.5.0 onwards
+		if (length($id) != hex($id_len)) {
+			warn "Not a CSN: $_\n";
+			next;
+		}
+		my $ts_dec = hex($ts); # Value is 64-bits hence using bignum
+		my $no_dec = hex($no);
+		my $ts_str = ts2timestr $ts_dec;
+		print "CSNv2 $_\n  ts=$ts ($ts_dec) $ts_str\n  id=$id\n  no=$no ($no_dec)\n";
+	} else {
+		warn "Not a CSN: $_\n";
 	}
-	warn "Not a CSN: $_\n";
 }
 
 exit 0;
@@ -70,29 +88,36 @@ display the date and time in the CSN.
 
 $ decodecsn 0000014bcd10fe1562cd0083a482
 
-CSN 0000014bcd10fe1562cd0083a482
-  ts=0000014bcd10fe15 (1425074617877) Fri Feb 27 2015 22:03:37.877 GMT
+CSNv1 0000014bcd10fe1562cd0083a482
+  ts=014bcd10fe15 (1425074617877) Fri Feb 27 2015 22:03:37.877 GMT
   id=62cd (25293)
   no=0083a482 (8627330)
 
 $ decodecsn -z America/Los_Angeles 0000014bcd10fe1562cd0083a482
 
-CSN 0000014bcd10fe1562cd0083a482
-  ts=0000014bcd10fe15 (1425074617877) Fri Feb 27 2015 14:03:37.877 PST
+CSNv1 0000014bcd10fe1562cd0083a482
+  ts=014bcd10fe15 (1425074617877) Fri Feb 27 2015 14:03:37.877 PST
   id=62cd (25293)
   no=0083a482 (8627330)
 
 $  decodecsn -z -0500 0000014bcd10fe1562cd0083a482
 
-CSN 0000014bcd10fe1562cd0083a482
-  ts=0000014bcd10fe15 (1425074617877) Fri Feb 27 2015 17:03:37.877 -0500
+CSNv1 0000014bcd10fe1562cd0083a482
+  ts=014bcd10fe15 (1425074617877) Fri Feb 27 2015 17:03:37.877 -0500
   id=62cd (25293)
   no=0083a482 (8627330)
+
+$ decodecsn 01050166b043d5fe000000c416407
+
+CSNv2 01050166b043d5fe000000c416407
+  ts=0166b043d5fe (1540555527678) Fri Oct 26 2018 13:05:27.678 BST
+  id=16407
+  no=000000c4 (196)
 
 =head1 WARNING
 
 The format of the CSN is undocumented and subject to change. This tool has been
-tested with OpenDJ 2.4 and OpenDJ 2.6.
+tested with CSNv1 (OpenDJ 2.4 to DS 6.0.0), and CSNv2 (DS 6.5.0).
 
 =head1 SEE ALSO
 
@@ -104,6 +129,6 @@ Chris Ridd E<lt>chris.ridd@forgerock.comE<gt>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2012-2014 Chris Ridd. All rights reserved. This tool is free
+Copyright (c) 2012-2018 Chris Ridd. All rights reserved. This tool is free
 software; you can redistribute it and/or modify it under the same terms as Perl
 itself.
