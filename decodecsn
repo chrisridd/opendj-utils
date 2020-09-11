@@ -3,7 +3,6 @@
 use strict;
 use warnings;
 use bignum qw(hex);
-use DateTime;
 
 sub usage() {
 	print STDERR "Usage: $0 [-z timezone] csn [...]\n";
@@ -20,14 +19,24 @@ if ($ARGV[0] eq "-z") {
 	usage unless defined $zone;
 }
 
-$zone = DateTime::TimeZone->new(name => defined($zone) ? $zone : 'local');
+if (eval{require DateTime}) {
+	$zone = DateTime::TimeZone->new(name => defined($zone) ? $zone : 'local');
+} elsif (eval{require POSIX}) {
+	$zone = undef;
+} else {
+	die "Cannot convert times due to missing modules (DateTime is preferred)\n"
+}
 
 sub ts2timestr($) {
 	my $ts_dec = shift;
 
-	my $time = DateTime->from_epoch( epoch => $ts_dec / 1000 ); # UTC
-	$time->set_time_zone($zone);
-	return $time->strftime("%a %b %e %Y %H:%M:%S.%3N %Z");
+	if (defined $zone) {
+		my $time = DateTime->from_epoch( epoch => $ts_dec / 1000 ); # UTC
+		$time->set_time_zone($zone);
+		return $time->strftime("%a %b %e %Y %H:%M:%S.%3N %Z");
+	}
+	my $ms = sprintf "%03d", $ts_dec % 1000;
+	return POSIX::strftime("%a %b %e %Y %H:%M:%S.$ms %z", localtime($ts_dec / 1000));
 }
 
 foreach (@ARGV) {
@@ -78,7 +87,9 @@ This tool decodes CSNs.
 =over
 
 =item B<-z> use the following timezone name or offset instead of localtime to
-display the date and time in the CSN.
+display the date and time in the CSN. This uses the perl DateTime module. If
+that module isn't installed this flag will be ignored and localtime will be
+used.
 
 =item B<csn> a change sequence number encoded in hex.
 
@@ -117,7 +128,7 @@ CSNv2 01050166b043d5fe000000c416407
 =head1 WARNING
 
 The format of the CSN is undocumented and subject to change. This tool has been
-tested with CSNv1 (OpenDJ 2.4 to DS 6.0.0), and CSNv2 (DS 6.5.0).
+tested with CSNv1 (OpenDJ 2.4 to DS 6.0.0), and CSNv2 (DS 6.5.0 and up).
 
 =head1 SEE ALSO
 
