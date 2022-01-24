@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-$::VERSION = 0.1;
+$::VERSION = 0.2;
 
 sub version()
 {
@@ -45,7 +45,7 @@ while (<>) {
 	if (my ($scope,$filter) = m{SEARCH REQ.* scope=(\S+) filter="([^\"]+)"}) {
 		next if $scope =~ m{baseObject};
 		$filter = lc($filter);
-		$filter =~ s{\(([a-z0-9_-]+)=[^\*\)]+\)}{($1=EQUALITY)}gi;
+		$filter =~ s{\(([a-z0-9_-]+)=[^\*\)]+\*?\)}{($1=EQUALITY)}gi;
 		$filter =~ s{\(([a-z0-9_-]+)>=[^\*\)]+\)}{($1=ORDERING)}gi;
 		$filter =~ s{\(([a-z0-9_-]+)<=[^\*\)]+\)}{($1=ORDERING)}gi;
 		$filter =~ s{\(([a-z0-9_-]+)=\*\)}{($1=PRESENCE)}gi;
@@ -88,7 +88,9 @@ topfilters -v
 OpenDJ access log files include the filters used for all search operations.
 Filters for baseObject searches are not indexable, but all others are.
 
-This tool outputs a list of filter types, ordered by frequency.
+This tool outputs a list of filter types, ordered by frequency. Note this does
+not mean that the server requires an index for every term, so the output is only
+a guide to what might need indexing.
 
 =head1 OPTIONS
 
@@ -103,12 +105,12 @@ This tool outputs a list of filter types, ordered by frequency.
 =head1 EXAMPLE
 
 $ topfilters < access
-
-(objectclass=EQUALITY): 3002
-(objectclass=PRESENCE): 430
-(ds-task-id=EQUALITY): 25
-(telephonenumber=EQUALITY): 7
-(&(cn=PRESENCE)(telephonenumber=EQUALITY)): 1
+ frequency filter
+      3002 (objectclass=EQUALITY)
+       430 (objectclass=PRESENCE)
+        25 (ds-task-id=EQUALITY)
+         7 (telephonenumber=EQUALITY)
+         1 (&(cn=PRESENCE)(telephonenumber=EQUALITY))
 
 =head1 SEE ALSO
 
@@ -120,5 +122,5 @@ Chris Ridd E<lt>chris.ridd@forgerock.comE<gt>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2013 Chris Ridd. All rights reserved. This tool is free software;
+Copyright (c) 2013-2022 Chris Ridd. All rights reserved. This tool is free software;
 you can redistribute it and/or modify it under the same terms as Perl itself.
